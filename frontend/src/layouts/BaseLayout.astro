@@ -73,20 +73,68 @@ try {
   </main>
   <Footer siteInfo={siteInfo} />
 
-  <a
-    href="https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=true&selectedSpeciality=psychologist&standardizedMotives="
-    class="floating-rdv"
-    target="_blank"
-    rel="noopener"
-    aria-label="Prendre rendez-vous"
-  >
+  <button class="floating-rdv" data-booking aria-label="Prendre rendez-vous">
     <span class="material-symbols-rounded">calendar_month</span>
     <span class="floating-rdv-label">Prendre rendez-vous</span>
-  </a>
+  </button>
+
+  <!-- Modal avant réservation -->
+  <div class="booking-modal-overlay" id="bookingModal" aria-hidden="true">
+    <div class="booking-modal" role="dialog" aria-labelledby="modalTitle">
+      <div class="booking-modal-header">
+        <span>Confidentiel</span>
+        <span class="booking-modal-header-sep">·</span>
+        <span>Anonyme</span>
+        <span class="booking-modal-header-sep">·</span>
+        <span>Bienveillant</span>
+      </div>
+      <div class="booking-modal-body">
+        <h2 id="modalTitle">Avant de prendre rendez-vous</h2>
+        <p>
+          Lors de votre prise de rendez-vous, vous aurez la possibilité d'indiquer les sujets que vous souhaitez aborder.
+        </p>
+        <p>
+          Ces informations permettent à Andrea de préparer la séance et d'adapter son écoute dès le premier échange.
+        </p>
+        <p class="booking-modal-note">
+          Pas d'inquiétude si vous ne savez pas encore quoi écrire, quelques mots suffisent.
+        </p>
+        <div class="booking-modal-actions">
+          <a href="https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=true&selectedSpeciality=psychologist&standardizedMotives=" class="btn btn-primary" target="_blank" rel="noopener" id="modalConfirm">
+            Continuer
+          </a>
+          <button class="booking-modal-close" id="modalClose">Annuler</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     document.querySelector('.menu-toggle')?.addEventListener('click', () => {
       document.querySelector('.nav-links')?.classList.toggle('open');
+    });
+
+    const overlay = document.getElementById('bookingModal');
+    const closeBtn = document.getElementById('modalClose');
+
+    document.querySelectorAll('[data-booking]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        overlay?.removeAttribute('aria-hidden');
+        overlay?.classList.add('open');
+      });
+    });
+
+    closeBtn?.addEventListener('click', () => {
+      overlay?.setAttribute('aria-hidden', 'true');
+      overlay?.classList.remove('open');
+    });
+
+    overlay?.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.classList.remove('open');
+      }
     });
   </script>
 
@@ -101,7 +149,8 @@ try {
       gap: 0.5rem;
       background: var(--primary);
       color: #fff;
-      text-decoration: none;
+      border: none;
+      cursor: pointer;
       padding: 0.75rem 1.25rem;
       border-radius: 999px;
       font-family: 'Author', serif;
