@@ -1,0 +1,127 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const userName = Astro.cookies.get('user_name')?.value ?? 'Patient';
+const bookingUrl = 'https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=true&selectedSpeciality=psychologist&standardizedMotives=';
+---
+
+<AdminLayout title="Mon espace — Andrea Simonet-Davin" userName={userName}>
+
+  <div class="patient-dashboard">
+
+    <div class="dashboard-header">
+      <h1>Bonjour, {userName}</h1>
+      <p>Bienvenue dans votre espace personnel</p>
+    </div>
+
+    <div class="patient-card">
+      <div class="patient-card-icon">
+        <span class="material-symbols-rounded">calendar_month</span>
+      </div>
+      <div>
+        <h2>Prendre rendez-vous</h2>
+        <p>Les prises de rendez-vous et la gestion de vos séances s'effectuent via la plateforme Qare.</p>
+        <a href={bookingUrl} target="_blank" rel="noopener" class="btn-qare">
+          Accéder à Qare
+          <span class="material-symbols-rounded">open_in_new</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="patient-card">
+      <div class="patient-card-icon">
+        <span class="material-symbols-rounded">lock</span>
+      </div>
+      <div>
+        <h2>Confidentialité</h2>
+        <p>Toutes vos données de santé et les informations partagées lors des séances sont soumises au secret professionnel absolu. Elles ne sont jamais transmises à des tiers.</p>
+      </div>
+    </div>
+
+  </div>
+
+</AdminLayout>
+
+<style>
+  .patient-dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .dashboard-header h1 {
+    font-family: 'Author', serif;
+    font-size: 1.75rem;
+    color: #1C3F6E;
+    margin-bottom: 0.25rem;
+  }
+
+  .dashboard-header p {
+    font-size: 0.88rem;
+    color: #888;
+  }
+
+  .patient-card {
+    background: white;
+    border-radius: 14px;
+    padding: 1.75rem;
+    box-shadow: 0 2px 16px rgba(123, 107, 168, 0.08);
+    border: 1px solid #ece9f5;
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+  }
+
+  .patient-card-icon {
+    width: 44px;
+    height: 44px;
+    background: #f4f2f9;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .patient-card-icon .material-symbols-rounded {
+    color: #7B6BA8;
+    font-size: 1.4rem;
+  }
+
+  .patient-card h2 {
+    font-family: 'Author', serif;
+    font-size: 1.05rem;
+    color: #1C3F6E;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .patient-card p {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.65;
+    margin-bottom: 1rem;
+  }
+
+  .patient-card p:last-child { margin-bottom: 0; }
+
+  .btn-qare {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: linear-gradient(135deg, #7B6BA8, #5a4e8a);
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    padding: 0.6rem 1.1rem;
+    font-family: 'Author', serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
+
+  .btn-qare:hover { opacity: 0.88; }
+  .btn-qare .material-symbols-rounded { font-size: 1rem; }
+</style>

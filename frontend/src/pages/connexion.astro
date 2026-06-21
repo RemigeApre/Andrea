@@ -1,0 +1,246 @@
+---
+export const prerender = false;
+
+import '../styles/global.css';
+
+const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8055';
+
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  try {
+    const data = await Astro.request.formData();
+    const email = String(data.get('email') ?? '');
+    const password = String(data.get('password') ?? '');
+
+    const authRes = await fetch(`${DIRECTUS_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!authRes.ok) {
+      error = 'Identifiants incorrects.';
+    } else {
+      const { data: authData } = await authRes.json();
+      const token = authData.access_token;
+
+      const meRes = await fetch(`${DIRECTUS_URL}/users/me?fields=first_name,role.name`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const { data: user } = await meRes.json();
+      const roleName: string = user?.role?.name ?? '';
+      const role = roleName.toLowerCase() === 'administrator' ? 'admin' : 'patient';
+
+      const cookieOpts = {
+        httpOnly: true,
+        secure: import.meta.env.PROD,
+        sameSite: 'strict' as const,
+        path: '/',
+        maxAge: 60 * 60 * 8,
+      };
+
+      Astro.cookies.set('directus_token', token, cookieOpts);
+      Astro.cookies.set('user_role', role, cookieOpts);
+      Astro.cookies.set('user_name', user?.first_name ?? '', { ...cookieOpts, httpOnly: false });
+
+      const redirectTo = Astro.url.searchParams.get('redirect');
+      return Astro.redirect(redirectTo ?? (role === 'admin' ? '/admin' : '/patient'));
+    }
+  } catch {
+    error = 'Une erreur est survenue. Vérifiez votre connexion.';
+  }
+}
+---
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=author@300,400,500,600&f[]=gambarino@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <title>Connexion — Andrea Simonet-Davin</title>
+</head>
+<body class="login-body">
+
+  <div class="login-wrap">
+
+    <a href="/" class="login-back">
+      <span class="material-symbols-rounded">arrow_back</span>
+      Retour au site
+    </a>
+
+    <div class="login-card">
+      <div class="login-logo">
+        <span class="material-symbols-rounded">lock</span>
+      </div>
+      <h1>Connexion</h1>
+
+      {error && (
+        <div class="login-error">
+          <span class="material-symbols-rounded">error</span>
+          {error}
+        </div>
+      )}
+
+      <form method="POST" class="login-form">
+        <div class="login-field">
+          <label for="email">Adresse email</label>
+          <input type="email" id="email" name="email" required autocomplete="email" placeholder="votre@email.com" />
+        </div>
+        <div class="login-field">
+          <label for="password">Mot de passe</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••" />
+        </div>
+        <button type="submit" class="login-submit">
+          Se connecter
+          <span class="material-symbols-rounded">arrow_forward</span>
+        </button>
+      </form>
+    </div>
+
+  </div>
+
+</body>
+</html>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  .login-body {
+    min-height: 100vh;
+    background: #f4f2f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Gambarino', Georgia, serif;
+  }
+
+  .login-wrap {
+    width: 100%;
+    max-width: 400px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .login-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #7B6BA8;
+    text-decoration: none;
+    font-size: 0.85rem;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+  }
+
+  .login-back:hover { opacity: 1; }
+  .login-back .material-symbols-rounded { font-size: 1rem; }
+
+  .login-card {
+    background: white;
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 4px 32px rgba(123, 107, 168, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .login-logo {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #7B6BA8, #5a4e8a);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .login-logo .material-symbols-rounded {
+    color: white;
+    font-size: 1.5rem;
+  }
+
+  h1 {
+    font-family: 'Author', serif;
+    font-size: 1.6rem;
+    color: #1C3F6E;
+  }
+
+  .login-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 0.88rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .login-error .material-symbols-rounded { font-size: 1.1rem; }
+
+  .login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+  }
+
+  .login-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  label {
+    font-size: 0.78rem;
+    font-family: 'Author', serif;
+    font-weight: 600;
+    color: #1C3F6E;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  input {
+    border: 1.5px solid #e2e0ea;
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.95rem;
+    font-family: 'Gambarino', Georgia, serif;
+    color: #333;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+
+  input:focus { border-color: #7B6BA8; }
+
+  .login-submit {
+    margin-top: 0.25rem;
+    background: linear-gradient(135deg, #7B6BA8, #5a4e8a);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.85rem 1.25rem;
+    font-family: 'Author', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: opacity 0.2s;
+  }
+
+  .login-submit:hover { opacity: 0.88; }
+  .login-submit .material-symbols-rounded { font-size: 1.1rem; }
+</style>

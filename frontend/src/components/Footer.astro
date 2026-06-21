@@ -1,0 +1,49 @@
+---
+interface Props {
+  siteInfo: any;
+}
+const { siteInfo } = Astro.props;
+
+const bookingUrl = 'https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=true&selectedSpeciality=psychologist&standardizedMotives=';
+---
+
+<div class="footer-urgences">
+  <div class="footer-urgences-inner">
+    <span class="footer-urgences-label">Numéros d'urgence</span>
+    <div class="footer-urgences-nums" id="urgences-nums">
+      <a href="tel:15" class="footer-urgence-item"><span>15</span><em class="footer-urgence-item-label">SAMU</em></a>
+      <a href="tel:17" class="footer-urgence-item"><span>17</span><em class="footer-urgence-item-label">Police</em></a>
+      <a href="tel:18" class="footer-urgence-item"><span>18</span><em class="footer-urgence-item-label">Pompiers</em></a>
+      <a href="tel:112" class="footer-urgence-item"><span>112</span><em class="footer-urgence-item-label">Européen</em></a>
+      <a href="tel:114" class="footer-urgence-item footer-urgence-item--mute"><span>114</span><em class="footer-urgence-item-label">SMS · Muet</em></a>
+      <div class="footer-urgences-sep"></div>
+      <a href="tel:0145394000" class="footer-urgence-item footer-urgence-item--soutien"><span>01 45 39 40 00</span><em class="footer-urgence-item-label">Suicide Écoute</em></a>
+      <a href="tel:0142962626" class="footer-urgence-item footer-urgence-item--soutien"><span>01 42 96 26 26</span><em class="footer-urgence-item-label">SOS Amitié</em></a>
+    </div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+
+    <nav class="footer-links">
+      <a href="/deontologie">Déontologie</a>
+      <a href="/faq">FAQ</a>
+    </nav>
+
+    <div class="footer-bottom">
+      <span class="footer-copyright">&copy; {new Date().getFullYear()} {siteInfo.name} <span class="footer-adeli">· N° ADELI : {siteInfo.adeli}</span></span>
+      <span class="footer-legal-links">
+        <a href="/mentions-legales">Mentions légales</a>
+        <span>·</span>
+        <a href="/politique-de-confidentialite">Confidentialité</a>
+      </span>
+      <span class="footer-ext-links">
+        <a href={siteInfo.doctolib_url} target="_blank" rel="noopener">Doctolib</a>
+        <span>·</span>
+        <a href={bookingUrl} target="_blank" rel="noopener" class="footer-qare">Qare</a>
+      </span>
+    </div>
+
+  </div>
+</footer>

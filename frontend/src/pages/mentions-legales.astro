@@ -1,0 +1,124 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Mentions légales — Andrea Simonet-Davin, Psychologue"
+  description="Mentions légales du site d'Andrea Simonet-Davin, psychologue à Canet-en-Roussillon."
+  activePage=""
+>
+
+  <section class="section">
+    <div class="container">
+      <div class="legal-content">
+
+        <h1>Mentions légales</h1>
+        <p class="legal-intro">Conformément aux dispositions de la loi n° 2004-575 du 21 juin 2004 pour la confiance en l'économie numérique.</p>
+
+        <div class="legal-block">
+          <h2>Éditeur du site</h2>
+          <ul>
+            <li><span>Nom</span> Andrea Simonet-Davin</li>
+            <li><span>Profession</span> Psychologue</li>
+            <li><span>SIRET</span> 99330485600012</li>
+            <li><span>N° ADELI</span> 10111639034</li>
+            <li><span>Adresse</span> 168 Avenue Edouard Herriot, 66140 Canet-en-Roussillon</li>
+            <li><span>Email</span> simonet.davin@gmail.com</li>
+          </ul>
+        </div>
+
+        <div class="legal-block">
+          <h2>Hébergement</h2>
+          <ul>
+            <li><span>Hébergeur</span> OVHcloud</li>
+            <li><span>Adresse</span> 2 rue Kellermann, 59100 Roubaix, France</li>
+            <li><span>Site</span> ovhcloud.com</li>
+            <li><span>Nom de domaine</span> Enregistré via Ionos (1&1 IONOS SE)</li>
+          </ul>
+        </div>
+
+        <div class="legal-block">
+          <h2>Réalisation</h2>
+          <p>Ce site a été conçu, réalisé et est maintenu par <strong>Le Geai</strong>, pour le compte d'Andrea Simonet-Davin, psychologue. Le contenu éditorial, les textes et les visuels restent la propriété exclusive d'Andrea Simonet-Davin. Toute reproduction sans autorisation écrite préalable est interdite.</p>
+        </div>
+
+        <div class="legal-block">
+          <h2>Responsabilité</h2>
+          <p>Les informations publiées sur ce site sont fournies à titre informatif et ne constituent pas un avis ou une consultation psychologique. En cas d'urgence, contactez le 15 ou le 3114.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  .legal-content {
+    max-width: 640px;
+    margin-inline: auto;
+  }
+
+  h1 {
+    font-family: 'Author', serif;
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .legal-intro {
+    font-size: 0.85rem;
+    color: var(--charcoal-light);
+    margin-bottom: 2.5rem;
+  }
+
+  .legal-block {
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .legal-block:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+
+  h2 {
+    font-family: 'Author', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.8rem;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  li {
+    font-size: 0.9rem;
+    color: var(--charcoal);
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  li span {
+    color: var(--charcoal-light);
+    font-size: 0.8rem;
+    min-width: 90px;
+    padding-top: 0.05rem;
+  }
+
+  p {
+    font-size: 0.9rem;
+    color: var(--charcoal);
+    line-height: 1.7;
+    margin: 0;
+  }
+</style>

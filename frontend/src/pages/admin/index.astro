@@ -1,0 +1,334 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8055';
+const token = Astro.cookies.get('directus_token')?.value ?? '';
+const userName = Astro.cookies.get('user_name')?.value ?? 'Administrateur';
+
+let currentPrice = '';
+let tarifId: string | null = null;
+let success = false;
+let error = '';
+
+// Fetch current tarif
+try {
+  const res = await fetch(`${DIRECTUS_URL}/items/tarifs?limit=1`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.ok) {
+    const json = await res.json();
+    const item = json.data?.[0];
+    if (item) {
+      tarifId = item.id;
+      currentPrice = item.price_min ?? '';
+    }
+  }
+} catch {
+  error = 'Impossible de récupérer le tarif actuel.';
+}
+
+// Handle price update
+if (Astro.request.method === 'POST') {
+  try {
+    const data = await Astro.request.formData();
+    const newPrice = String(data.get('price') ?? '').trim();
+
+    if (!newPrice || isNaN(Number(newPrice))) {
+      error = 'Veuillez entrer un prix valide.';
+    } else if (!tarifId) {
+      // Create new tarif entry
+      const res = await fetch(`${DIRECTUS_URL}/items/tarifs`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ price_min: Number(newPrice), label: 'par séance' }),
+      });
+      if (res.ok) { success = true; currentPrice = newPrice; }
+      else { error = 'Erreur lors de la mise à jour.'; }
+    } else {
+      const res = await fetch(`${DIRECTUS_URL}/items/tarifs/${tarifId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ price_min: Number(newPrice) }),
+      });
+      if (res.ok) { success = true; currentPrice = newPrice; }
+      else { error = 'Erreur lors de la mise à jour.'; }
+    }
+  } catch {
+    error = 'Une erreur est survenue.';
+  }
+}
+---
+
+<AdminLayout title="Tableau de bord — Administration" userName={userName}>
+
+  <div class="dashboard">
+
+    <div class="dashboard-header">
+      <h1>Bonjour, {userName}</h1>
+      <p>Tableau de bord de gestion du site</p>
+    </div>
+
+    <!-- Tarif card -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <span class="material-symbols-rounded">payments</span>
+        <h2>Tarif de consultation</h2>
+      </div>
+
+      {currentPrice && (
+        <div class="current-price">
+          <span class="current-price-label">Tarif actuel</span>
+          <span class="current-price-value">{currentPrice}&nbsp;€</span>
+          <span class="current-price-sub">par séance</span>
+        </div>
+      )}
+
+      {success && (
+        <div class="alert alert-success">
+          <span class="material-symbols-rounded">check_circle</span>
+          Tarif mis à jour avec succès.
+        </div>
+      )}
+
+      {error && (
+        <div class="alert alert-error">
+          <span class="material-symbols-rounded">error</span>
+          {error}
+        </div>
+      )}
+
+      <form method="POST" class="price-form">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="price">Nouveau tarif (€)</label>
+            <div class="price-input-wrap">
+              <input
+                type="number"
+                id="price"
+                name="price"
+                min="0"
+                step="1"
+                placeholder={currentPrice || '60'}
+                required
+              />
+              <span class="price-input-suffix">€</span>
+            </div>
+          </div>
+          <button type="submit" class="btn-save">
+            <span class="material-symbols-rounded">save</span>
+            Enregistrer
+          </button>
+        </div>
+        <p class="form-note">
+          <span class="material-symbols-rounded">info</span>
+          Les modifications sont enregistrées immédiatement dans le système.
+        </p>
+      </form>
+    </div>
+
+  </div>
+
+</AdminLayout>
+
+<style>
+  .dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .dashboard-header h1 {
+    font-family: 'Author', serif;
+    font-size: 1.75rem;
+    color: #1C3F6E;
+    margin-bottom: 0.25rem;
+  }
+
+  .dashboard-header p {
+    font-size: 0.88rem;
+    color: #888;
+  }
+
+  .dash-card {
+    background: white;
+    border-radius: 14px;
+    padding: 1.75rem;
+    box-shadow: 0 2px 16px rgba(123, 107, 168, 0.08);
+    border: 1px solid #ece9f5;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .dash-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid #f0edf8;
+  }
+
+  .dash-card-header .material-symbols-rounded {
+    color: #7B6BA8;
+    font-size: 1.5rem;
+  }
+
+  .dash-card-header h2 {
+    font-family: 'Author', serif;
+    font-size: 1.1rem;
+    color: #1C3F6E;
+    font-weight: 600;
+  }
+
+  .current-price {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    background: #f9f7ff;
+    border: 1px solid #ece9f5;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+
+  .current-price-label {
+    font-size: 0.8rem;
+    color: #7B6BA8;
+    font-family: 'Author', serif;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-right: auto;
+  }
+
+  .current-price-value {
+    font-family: 'Author', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: #1C3F6E;
+    line-height: 1;
+  }
+
+  .current-price-sub {
+    font-size: 0.82rem;
+    color: #888;
+  }
+
+  .alert {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.88rem;
+  }
+
+  .alert .material-symbols-rounded { font-size: 1.1rem; }
+
+  .alert-success {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    color: #166534;
+  }
+
+  .alert-error {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+  }
+
+  .price-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .form-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+  }
+
+  .form-field {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  label {
+    font-size: 0.78rem;
+    font-family: 'Author', serif;
+    font-weight: 600;
+    color: #1C3F6E;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .price-input-wrap {
+    position: relative;
+  }
+
+  input[type="number"] {
+    width: 100%;
+    border: 1.5px solid #e2e0ea;
+    border-radius: 8px;
+    padding: 0.7rem 2.5rem 0.7rem 0.9rem;
+    font-size: 1.1rem;
+    font-family: 'Author', serif;
+    font-weight: 600;
+    color: #1C3F6E;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[type="number"]:focus { border-color: #7B6BA8; }
+
+  .price-input-suffix {
+    position: absolute;
+    right: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Author', serif;
+    font-weight: 600;
+    color: #7B6BA8;
+    font-size: 1rem;
+    pointer-events: none;
+  }
+
+  .btn-save {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: linear-gradient(135deg, #7B6BA8, #5a4e8a);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.25rem;
+    font-family: 'Author', serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+
+  .btn-save:hover { opacity: 0.88; }
+  .btn-save .material-symbols-rounded { font-size: 1.1rem; }
+
+  .form-note {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    color: #aaa;
+  }
+
+  .form-note .material-symbols-rounded { font-size: 0.9rem; }
+</style>

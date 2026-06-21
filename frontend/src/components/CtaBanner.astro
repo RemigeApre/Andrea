@@ -1,0 +1,20 @@
+---
+interface Props {
+  title: string;
+  text: string;
+  buttonText: string;
+  buttonHref: string;
+  external?: boolean;
+}
+const { title, text, buttonText, buttonHref, external = false } = Astro.props;
+---
+
+<section class="cta-banner">
+  <div class="container">
+    <h2>{title}</h2>
+    <p>{text}</p>
+    <a href={buttonHref} class="btn btn-primary" {...(external ? { target: '_blank', rel: 'noopener' } : {})}>
+      {buttonText}
+    </a>
+  </div>
+</section>

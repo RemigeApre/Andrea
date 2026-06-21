@@ -1,0 +1,9 @@
+---
+export const prerender = false;
+
+Astro.cookies.delete('directus_token', { path: '/' });
+Astro.cookies.delete('user_role', { path: '/' });
+Astro.cookies.delete('user_name', { path: '/' });
+
+return Astro.redirect('/');
+---

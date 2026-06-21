@@ -1,0 +1,7 @@
+{
+  "name": "directus-seed",
+  "type": "module",
+  "dependencies": {
+    "@directus/sdk": "^18.0.0"
+  }
+}

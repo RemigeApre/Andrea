@@ -1,0 +1,347 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { fetchSingleton } from '../lib/directus';
+
+let siteInfo: any = null;
+
+try {
+  siteInfo = await fetchSingleton('site_info');
+} catch {
+  siteInfo = {
+    name: 'Andrea Simonet-Davin',
+    adeli: '10111639034',
+  };
+}
+
+const engagements = [
+  {
+    icon: 'lock',
+    titre: 'Secret professionnel absolu',
+    texte: "Tout ce que vous partagez en séance reste strictement confidentiel. Je ne transmets aucune information à un tiers sans votre accord explicite, y compris à votre médecin ou à votre famille."
+  },
+  {
+    icon: 'handshake',
+    titre: 'Consentement libre et éclairé',
+    texte: "Vous êtes toujours informé(e) du cadre de l'accompagnement, des méthodes utilisées et de leur objectif. Vous restez libre d'interrompre la thérapie à tout moment, sans justification."
+  },
+  {
+    icon: 'favorite',
+    titre: 'Non-jugement et respect',
+    texte: "Quelle que soit votre situation, votre histoire ou vos choix, vous êtes accueilli(e) sans jugement."
+  },
+  {
+    icon: 'visibility',
+    titre: 'Transparence',
+    texte: "Les honoraires, la durée des séances et le cadre thérapeutique sont communiqués clairement dès le départ. Aucune surprise, aucune ambiguïté."
+  },
+  {
+    icon: 'psychology',
+    titre: 'Compétence et formation continue',
+    texte: "Je m'engage à maintenir et faire évoluer mes compétences par des formations régulières et des supervisions. Mon titre est protégé par la loi et garanti par mon Master II (UNIL, 2020)."
+  },
+  {
+    icon: 'emergency',
+    titre: 'Orientation si nécessaire',
+    texte: "Si votre situation nécessite une prise en charge que je ne peux pas assurer seule, je vous oriente vers le professionnel adapté (psychiatre, médecin, structure spécialisée)."
+  },
+];
+
+const principes = [
+  {
+    titre: 'Respect de la personne et de sa dignité',
+    texte: "Chaque personne est accueillie dans sa singularité, ses valeurs et ses choix, sans discrimination d'aucune sorte."
+  },
+  {
+    titre: 'Compétence',
+    texte: "Le psychologue s'engage à exercer dans le champ de ses compétences et à les entretenir par la formation et la supervision."
+  },
+  {
+    titre: 'Responsabilité et autonomie professionnelle',
+    texte: "Le psychologue assume ses actes et exerce en toute indépendance, guidé uniquement par l'intérêt de la personne accompagnée."
+  },
+  {
+    titre: 'Rigueur et intégrité',
+    texte: "La pratique repose sur des méthodes scientifiquement validées. Le psychologue distingue clairement les données objectives de ses interprétations cliniques."
+  },
+  {
+    titre: 'Respect du but assigné',
+    texte: "La psychologie est exercée dans ses seules finalités légitimes : le bien-être, le développement et la santé mentale des personnes."
+  },
+  {
+    titre: 'Confidentialité',
+    texte: "Le secret professionnel est absolu et perpétuel. Il couvre l'identité, les propos et toute information partagée dans le cadre de la relation thérapeutique."
+  },
+];
+---
+
+<BaseLayout
+  title="Déontologie — Andrea Simonet-Davin, Psychologue"
+  description="Engagements déontologiques d'Andrea Simonet-Davin, psychologue. Secret professionnel, consentement, transparence. Code de déontologie des psychologues (2021)."
+  activePage=""
+>
+
+  <!-- Intro -->
+  <section class="section">
+    <div class="container">
+      <div class="deonto-intro">
+        <p>
+          La relation thérapeutique ne peut exister sans confiance. Cette confiance, je ne la demande pas : je la construis, séance après séance, en respectant des engagements précis et contraignants. Le <strong>Code de Déontologie des Psychologues</strong>, dans sa version révisée en 2021, constitue le socle de ma pratique. Il ne s'agit pas d'une déclaration d'intention, mais d'un cadre professionnel auquel je suis tenue, et que vous êtes en droit d'exiger.
+        </p>
+        <p>
+          Ce que vous trouvez sur cette page décrit concrètement ce à quoi vous pouvez vous attendre, et ce que je m'interdis, quelles que soient les circonstances.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Engagements simplifiés -->
+  <section class="section section-alt">
+    <div class="container">
+      <h2 class="deonto-section-title">Ce que cela signifie concrètement pour vous</h2>
+      <div class="engagements-grid">
+        {engagements.map((e) => (
+          <div class="engagement-card">
+            <span class="material-symbols-rounded engagement-icon">{e.icon}</span>
+            <h3>{e.titre}</h3>
+            <p>{e.texte}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Principes officiels -->
+  <section class="section">
+    <div class="container">
+      <h2 class="deonto-section-title">Les 6 principes fondamentaux du code</h2>
+      <ol class="principes-list">
+        {principes.map((p) => (
+          <li class="principe-item">
+            <strong>{p.titre}</strong>
+            <p>{p.texte}</p>
+          </li>
+        ))}
+      </ol>
+
+      <div class="deonto-footer-block">
+        <div class="adeli-block">
+          <span class="material-symbols-rounded">verified</span>
+          <div>
+            <strong>N° ADELI : {siteInfo.adeli}</strong>
+            <p>Délivré par l'Agence Régionale de Santé. Ce numéro atteste de mon inscription officielle en tant que psychologue et de la validité de mon diplôme. Vérifiable auprès de l'ARS.</p>
+          </div>
+        </div>
+        <a href="https://www.codededeontologiedespsychologues.fr/" target="_blank" rel="noopener" class="code-link">
+          Consulter le texte intégral du code
+          <span class="material-symbols-rounded">open_in_new</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  .deonto-intro {
+    max-width: 680px;
+    margin-inline: auto;
+  }
+
+  .deonto-intro h1 {
+    font-family: 'Author', serif;
+    font-size: 2.25rem;
+    color: var(--primary);
+    margin-bottom: 1.25rem;
+  }
+
+  .deonto-intro p {
+    color: var(--charcoal);
+    line-height: 1.9;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    text-align: justify;
+    hyphens: auto;
+  }
+
+  .deonto-intro p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ── Section title ── */
+  .deonto-section-title {
+    font-family: 'Author', serif;
+    font-size: 1.6rem;
+    color: var(--primary);
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  /* ── Engagements grid ── */
+  .engagements-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    max-width: 900px;
+    margin-inline: auto;
+  }
+
+  @media (max-width: 768px) {
+    .engagements-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .engagements-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .engagement-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem 1.25rem;
+  }
+
+  .engagement-icon {
+    color: var(--primary);
+    font-size: 1.6rem;
+    display: block;
+    margin-bottom: 0.75rem;
+  }
+
+  .engagement-card h3 {
+    font-family: 'Author', serif;
+    font-size: 0.98rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin: 0 0 0.5rem;
+  }
+
+  .engagement-card p {
+    font-size: 0.88rem;
+    color: var(--charcoal);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  /* ── Principes list ── */
+  .principes-list {
+    max-width: 680px;
+    margin-inline: auto;
+    padding: 0;
+    list-style: none;
+    counter-reset: principe;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .principe-item {
+    counter-increment: principe;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0 1.25rem;
+    align-items: start;
+  }
+
+  .principe-item::before {
+    content: counter(principe);
+    font-family: 'Author', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--white);
+    background: var(--primary);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .principe-item strong {
+    font-family: 'Author', serif;
+    font-size: 0.98rem;
+    color: var(--primary);
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  .principe-item p {
+    font-size: 0.88rem;
+    color: var(--charcoal);
+    line-height: 1.7;
+    margin: 0;
+    grid-column: 2;
+  }
+
+  /* ── Footer block ── */
+  .deonto-footer-block {
+    max-width: 680px;
+    margin: 2.5rem auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .adeli-block {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    background: rgba(28, 63, 110, 0.05);
+    border: 1px solid rgba(28, 63, 110, 0.1);
+    border-radius: 10px;
+    padding: 1.25rem;
+  }
+
+  .adeli-block .material-symbols-rounded {
+    color: var(--primary);
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    margin-top: 0.1rem;
+  }
+
+  .adeli-block strong {
+    font-family: 'Author', serif;
+    color: var(--primary);
+    display: block;
+    margin-bottom: 0.35rem;
+  }
+
+  .adeli-block p {
+    font-size: 0.85rem;
+    color: var(--charcoal);
+    line-height: 1.65;
+    margin: 0;
+  }
+
+  .code-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'Author', serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 0.1rem;
+    align-self: flex-start;
+    transition: opacity 0.2s;
+  }
+
+  .code-link:hover {
+    opacity: 0.65;
+  }
+
+  .code-link .material-symbols-rounded {
+    font-size: 0.95rem;
+  }
+</style>

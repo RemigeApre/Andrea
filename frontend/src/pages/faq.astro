@@ -1,0 +1,182 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { fetchItems } from '../lib/directus';
+
+let faqItems: any[] = [];
+
+try {
+  faqItems = await fetchItems('faq', { sort: 'sort' });
+} catch {
+  faqItems = [];
+}
+
+const defaultFaq = [
+  {
+    question: "Combien coûte une séance de psychologie ?",
+    answer: "Une thérapie individuelle est au prix de 60\u00a0€.",
+    link: null
+  },
+  {
+    question: "Est-ce que les séances sont remboursées ?",
+    answer: "Certaines assurances complémentaires prennent en charge une partie des séances de psychologie selon le contrat. Je fournis une facture après chaque séance pour que vous puissiez demander un remboursement si votre assurance le permet.",
+    link: null
+  },
+  {
+    question: "Comment se déroule une première séance ?",
+    answer: "La première séance permet de faire connaissance, de comprendre vos besoins et vos attentes, et de poser ensemble un cadre de travail. Aucun engagement : c'est aussi le moment de voir si le courant passe.",
+    link: null
+  },
+  {
+    question: "Faites-vous des séances en ligne ?",
+    answer: "Oui, les séances peuvent être réalisées en ligne par visioconférence. Le cadre, la confidentialité et la qualité de l'accompagnement restent les mêmes qu'en cabinet.",
+    link: null
+  },
+  {
+    question: "Puis-je annuler ou déplacer une séance ?",
+    answer: "Oui, une séance peut être annulée ou déplacée. Merci de le faire au moins 24 heures à l'avance par message ou par mail afin que le créneau puisse être proposé à une autre personne.",
+    link: null
+  }
+];
+
+const questions = faqItems.length > 0
+  ? faqItems.map((item: any) => ({ question: item.question, answer: item.answer, link: null }))
+  : defaultFaq;
+---
+
+<BaseLayout
+  title="FAQ — Andrea Simonet-Davin, Psychologue"
+  description="Questions fréquentes sur les consultations de psychologie avec Andrea Simonet-Davin."
+  activePage=""
+>
+
+  <!-- FAQ -->
+  <section class="section">
+    <div class="container">
+      <div class="faq-list">
+        {questions.map((item, i) => (
+          <div class="faq-item" id={`q${i}`}>
+            <button class="faq-question" aria-expanded="false" aria-controls={`a${i}`}>
+              <span>{item.question}</span>
+              <span class="material-symbols-rounded faq-chevron">expand_more</span>
+            </button>
+            <div class="faq-answer" id={`a${i}`} hidden>
+              <p>{item.answer}</p>
+              {item.link && (
+                <a href={item.link.href} class="faq-link">
+                  {item.link.label}
+                  <span class="material-symbols-rounded">arrow_forward</span>
+                </a>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+
+</BaseLayout>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('.faq-question').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      const answerId = btn.getAttribute('aria-controls')!;
+      const answer = document.getElementById(answerId)!;
+
+      // Close all others
+      document.querySelectorAll<HTMLButtonElement>('.faq-question').forEach(b => {
+        b.setAttribute('aria-expanded', 'false');
+        const id = b.getAttribute('aria-controls')!;
+        document.getElementById(id)?.setAttribute('hidden', '');
+      });
+
+      if (!expanded) {
+        btn.setAttribute('aria-expanded', 'true');
+        answer.removeAttribute('hidden');
+      }
+    });
+  });
+</script>
+
+<style>
+  .faq-list {
+    max-width: 680px;
+    margin-inline: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .faq-item {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .faq-question {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 1.4rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Author', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--primary);
+    transition: color 0.2s;
+  }
+
+  .faq-question:hover {
+    color: var(--primary-dark, #152e52);
+  }
+
+  .faq-chevron {
+    flex-shrink: 0;
+    font-size: 1.3rem;
+    color: var(--primary);
+    transition: transform 0.25s ease;
+  }
+
+  .faq-question[aria-expanded="true"] .faq-chevron {
+    transform: rotate(180deg);
+  }
+
+  .faq-answer {
+    padding: 0 0 1.5rem;
+  }
+
+  .faq-answer p {
+    color: var(--charcoal);
+    line-height: 1.8;
+    font-size: 0.97rem;
+    margin: 0;
+  }
+
+  .faq-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.9rem;
+    font-size: 0.88rem;
+    font-family: 'Author', serif;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 0.1rem;
+    transition: opacity 0.2s;
+  }
+
+  .faq-link:hover {
+    opacity: 0.7;
+  }
+
+  .faq-link .material-symbols-rounded {
+    font-size: 1rem;
+  }
+</style>

@@ -1,0 +1,500 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { fetchSingleton } from '../lib/directus';
+
+let siteInfo: any = null;
+
+try {
+  siteInfo = await fetchSingleton('site_info');
+} catch {
+  siteInfo = { name: 'Andrea Simonet-Davin' };
+}
+
+const formation = [
+  {
+    titre: 'Accréditation française',
+    lieu: 'Gouvernement français',
+    periode: '2025',
+    description: "Validation du diplôme suisse par les autorités françaises, autorisant l'exercice de la psychologie sur le territoire national.",
+    icon: 'verified',
+  },
+  {
+    titre: 'Master en psychologie de la santé',
+    lieu: 'Université de Lausanne (UNIL), Suisse',
+    periode: '2020',
+    description: "Formation en psychopathologie, psychologie culturelle et accompagnement de publics variés (enfants, personnes âgées, publics en difficulté). Stages cliniques et mémoire de recherche.",
+    icon: 'school',
+  },
+  {
+    titre: 'Centre d\'addictologie',
+    lieu: 'CHUV (Centre Hospitalier Universitaire Vaudois), Lausanne, Suisse',
+    periode: '2018',
+    description: "Prévention sur le terrain, sensibilisation auprès de militaires de l'Armée Suisse, co-organisation d'un symposium et participation à la rédaction d'articles scientifiques.",
+    icon: 'local_hospital',
+  },
+  {
+    titre: 'Centre gériatrique',
+    lieu: 'GHOL (Groupement Hospitalier de l\'Ouest Lémanique)',
+    periode: '2014',
+    description: "Accompagnement psychologique de résidents âgés, passation de tests cognitifs, animation et écoute face aux problématiques du grand âge : deuil, douleur chronique, perte d'autonomie.",
+    icon: 'elderly',
+  },
+];
+
+const publications = [
+  {
+    type: 'Mémoire',
+    titre: "Discours de pères et mères autour de l'expérience corporel-sociéto-psychologique de l'allaitement",
+    icon: 'menu_book',
+  },
+  {
+    type: 'Article',
+    titre: "L'addiction aux jeux vidéos",
+    icon: 'article',
+  },
+  {
+    type: 'Article',
+    titre: "Un nouveau combat après le cancer du sein",
+    icon: 'article',
+  },
+];
+
+const benevolas = [
+  {
+    titre: 'Association Le Foyer',
+    lieu: 'Suisse',
+    description: "Accompagnement psychologique et relationnel de personnes aveugles, malvoyantes ou présentant une déficience intellectuelle.",
+    icon: 'volunteer_activism',
+  },
+  {
+    titre: "GHOL (Groupement Hospitalier de l'Ouest Lémanique)",
+    lieu: 'Suisse',
+    description: "Accompagnement psychologique de résidents âgés, passation de tests cognitifs, animation et écoute face aux problématiques du grand âge : deuil, douleur chronique, perte d'autonomie.",
+    icon: 'elderly',
+  },
+];
+---
+
+<BaseLayout
+  title="Votre psychologue — Andrea Simonet-Davin"
+  description="Parcours, formation et engagements d'Andrea Simonet-Davin, psychologue. Master en psychologie de la santé (UNIL), expériences en addictologie et gériatrie."
+  activePage="votre-psychologue"
+>
+
+  <!-- À propos -->
+  <section class="section">
+    <div class="container">
+      <div class="about-grid">
+
+        <!-- Text + langues -->
+        <div class="about-text">
+          <h2>À propos</h2>
+          <p>
+            Andrea a construit son parcours entre la Suisse et la France, dans des milieux variés : hôpitaux, centres spécialisés, associations. Cette diversité lui a donné une vision large de la souffrance psychique et des outils pour y répondre.
+          </p>
+          <p>
+            Le vécu féminin est un sujet qui lui tient particulièrement à cœur. Charge mentale, conflits familiaux, rapport au corps, identité. Les conflits au travail, le stress et les troubles du sommeil sont aussi parmi les motifs les plus fréquents de consultation.
+          </p>
+          <div class="about-languages">
+            <p class="languages-label">Langues de consultation</p>
+            <div class="language-pills">
+              <span class="language-pill">
+                <span class="material-symbols-rounded">translate</span>
+                Français
+              </span>
+              <span class="language-pill">
+                <span class="material-symbols-rounded">translate</span>
+                Anglais
+              </span>
+              <span class="language-pill">
+                <span class="material-symbols-rounded">translate</span>
+                Portugais
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Photo -->
+        <div class="about-aside">
+          <div class="about-photo-placeholder">
+            <img src="/andrea.webp" alt="Andrea Simonet-Davin, psychologue" />
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Parcours -->
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-title">
+        <h2>Parcours</h2>
+      </div>
+      <ol class="timeline">
+        {formation.map((etape, i) => (
+          <li class="timeline-item">
+            <div class="timeline-marker">
+              <span class="timeline-number">{i + 1}</span>
+            </div>
+            <div class="timeline-content">
+              <div class="timeline-header">
+                <span class="material-symbols-rounded timeline-icon">{etape.icon}</span>
+                <div>
+                  <h3 class="timeline-titre">{etape.titre}</h3>
+                  <p class="timeline-meta">
+                    {etape.lieu}
+                    {etape.periode && <span class="timeline-periode"> · {etape.periode}</span>}
+                  </p>
+                </div>
+              </div>
+              <p class="timeline-desc">{etape.description}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Travaux -->
+  <section class="section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Travaux</h2>
+      </div>
+      <div class="travaux-list">
+        {publications.map((pub) => (
+          <div class="travail-item">
+            <span class="travail-type">{pub.type}</span>
+            <p class="travail-titre">{pub.titre}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Bénévolat -->
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-title">
+        <h2>Bénévolat</h2>
+      </div>
+      <div class="benevolas-cards">
+        {benevolas.map((etape) => (
+          <div class="benevola-card">
+            <span class="material-symbols-rounded benevola-icon">{etape.icon}</span>
+            <h3>{etape.titre}</h3>
+            <p class="benevola-lieu">{etape.lieu}</p>
+            <p class="benevola-desc">{etape.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+
+</BaseLayout>
+
+<style>
+  /* ── About grid ─────────────────────────────────────────── */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    gap: 3.5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .about-grid {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+  }
+
+  .about-text h2 {
+    font-family: 'Author', serif;
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 1.25rem;
+  }
+
+  .about-text p {
+    color: var(--charcoal);
+    line-height: 1.8;
+    margin-bottom: 1rem;
+  }
+
+  .about-text p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ── Photo placeholder ──────────────────────────────────── */
+  .about-aside {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .about-photo-placeholder {
+    width: 240px;
+    height: 300px;
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .about-photo-placeholder img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+  }
+
+  /* ── Language pills ─────────────────────────────────────── */
+  .about-languages {
+    margin-top: 1.5rem;
+    text-align: left;
+  }
+
+  .languages-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--charcoal-light);
+    margin-bottom: 0.75rem;
+  }
+
+  .language-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .language-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.8rem;
+    background: var(--primary);
+    color: var(--white);
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-family: 'Gambarino', serif;
+  }
+
+  .language-pill .material-symbols-rounded {
+    font-size: 1rem;
+  }
+
+  /* ── Travaux ────────────────────────────────────────────── */
+  .travaux-list {
+    max-width: 680px;
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .travail-item {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--primary);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .travail-type {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--primary);
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.5rem;
+    opacity: 0.7;
+  }
+
+  .travail-titre {
+    font-family: 'Author', serif;
+    font-size: 1rem;
+    color: var(--charcoal);
+    line-height: 1.55;
+    margin: 0;
+    font-style: italic;
+  }
+
+  /* ── Section title ──────────────────────────────────────── */
+  .section-title {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .section-title h2 {
+    font-family: 'Author', serif;
+    font-size: 2rem;
+    color: var(--primary);
+  }
+
+  /* ── Timeline ───────────────────────────────────────────── */
+  .timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    max-width: 760px;
+    margin-inline: auto;
+  }
+
+  /* Vertical connecting line */
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 22px;
+    top: 22px;
+    bottom: 22px;
+    width: 2px;
+    background: var(--border);
+  }
+
+  .timeline-item {
+    display: flex;
+    gap: 1.5rem;
+    padding-bottom: 2.5rem;
+    position: relative;
+  }
+
+  .timeline-item:last-child {
+    padding-bottom: 0;
+  }
+
+  /* Numbered circle */
+  .timeline-marker {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .timeline-number {
+    color: var(--white);
+    font-family: 'Author', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  /* Last item gets a special accent */
+  .timeline-item:last-child .timeline-marker {
+    background: linear-gradient(135deg, var(--primary), #2a5fa8);
+    box-shadow: 0 0 0 4px rgba(28, 63, 110, 0.12);
+  }
+
+  .timeline-content {
+    flex: 1;
+    padding-top: 0.55rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .timeline-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .timeline-icon {
+    color: var(--primary);
+    font-size: 1.4rem;
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+  }
+
+  .timeline-titre {
+    font-family: 'Author', serif;
+    font-size: 1.15rem;
+    color: var(--primary);
+    margin: 0 0 0.2rem;
+    font-weight: 600;
+  }
+
+  .timeline-meta {
+    font-size: 0.85rem;
+    color: var(--charcoal-light);
+    margin: 0;
+  }
+
+  .timeline-periode {
+    font-style: italic;
+  }
+
+  .timeline-desc {
+    color: var(--charcoal);
+    line-height: 1.75;
+    font-size: 0.95rem;
+    margin: 0;
+  }
+
+  /* ── Bénévolat cards ───────────────────────────────────── */
+  .benevolas-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    max-width: 760px;
+    margin-inline: auto;
+  }
+
+  @media (max-width: 640px) {
+    .benevolas-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .benevola-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.75rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .benevola-icon {
+    color: var(--primary);
+    font-size: 1.75rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .benevola-card h3 {
+    font-family: 'Author', serif;
+    font-size: 1.05rem;
+    color: var(--primary);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .benevola-lieu {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--charcoal-light);
+    margin: 0;
+  }
+
+  .benevola-desc {
+    color: var(--charcoal);
+    line-height: 1.75;
+    font-size: 0.92rem;
+    margin: 0.5rem 0 0;
+  }
+
+</style>

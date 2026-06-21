@@ -1,0 +1,98 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Confidentialité — Andrea Simonet-Davin, Psychologue"
+  description="Politique de confidentialité et données personnelles du site d'Andrea Simonet-Davin, psychologue."
+  activePage=""
+>
+
+  <section class="section">
+    <div class="container">
+      <div class="legal-content">
+
+        <h1>Confidentialité</h1>
+        <p class="legal-intro">Conformément au Règlement Général sur la Protection des Données (RGPD) et à la loi Informatique et Libertés.</p>
+
+        <div class="legal-block">
+          <h2>Ce site ne collecte aucune donnée</h2>
+          <p>Ce site est un site vitrine. Il ne contient aucun formulaire de contact, aucun espace personnel et aucun système de paiement. Aucune donnée personnelle n'est collectée, stockée ou traitée par ce site.</p>
+        </div>
+
+        <div class="legal-block">
+          <h2>Cookies et traceurs</h2>
+          <p>Ce site n'utilise aucun cookie, aucun traceur et aucun outil d'analyse de trafic. Votre navigation n'est ni suivie ni enregistrée.</p>
+        </div>
+
+        <div class="legal-block">
+          <h2>Prise de rendez-vous</h2>
+          <p>Les prises de rendez-vous s'effectuent via la plateforme Qare. Les données que vous y renseignez sont traitées par Qare, soumises à leur propre politique de confidentialité et aux obligations spécifiques aux données de santé.</p>
+        </div>
+
+        <div class="legal-block">
+          <h2>Responsable du traitement</h2>
+          <p>Andrea Simonet-Davin, psychologue, 168 Avenue Edouard Herriot, 66140 Canet-en-Roussillon.<br>Contact : <a href="mailto:simonet.davin@gmail.com">simonet.davin@gmail.com</a></p>
+        </div>
+
+        <div class="legal-block">
+          <h2>Vos droits</h2>
+          <p>Vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Pour toute demande, contactez <a href="mailto:simonet.davin@gmail.com">simonet.davin@gmail.com</a>. En cas de litige, vous pouvez saisir la <a href="https://www.cnil.fr" target="_blank" rel="noopener">CNIL</a>.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  .legal-content {
+    max-width: 640px;
+    margin-inline: auto;
+  }
+
+  h1 {
+    font-family: 'Author', serif;
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .legal-intro {
+    font-size: 0.85rem;
+    color: var(--charcoal-light);
+    margin-bottom: 2.5rem;
+  }
+
+  .legal-block {
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .legal-block:last-child {
+    border-bottom: 1px solid var(--border);
+  }
+
+  h2 {
+    font-family: 'Author', serif;
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.8rem;
+  }
+
+  p {
+    font-size: 0.9rem;
+    color: var(--charcoal);
+    line-height: 1.7;
+    margin: 0;
+  }
+
+  a {
+    color: var(--primary);
+    text-decoration: underline;
+  }
+</style>

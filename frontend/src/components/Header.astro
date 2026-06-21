@@ -1,0 +1,38 @@
+---
+interface Props {
+  activePage: string;
+  siteInfo: any;
+}
+const { activePage, siteInfo } = Astro.props;
+
+const navItems = [
+  { href: '/', label: 'Accueil', key: 'accueil' },
+  { href: '/votre-psychologue', label: 'Votre psychologue', key: 'votre-psychologue' },
+];
+---
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="site-logo" aria-label="Andrea Simonet-Davin — Accueil">
+      <span class="site-logo-firstname">Andrea</span>
+      <span class="site-logo-surname">Simonet-Davin</span>
+    </a>
+    <nav class="header-nav">
+      <button class="menu-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div class="nav-links">
+        {navItems.map(item => (
+          <a href={item.href} class={activePage === item.key ? 'active' : ''}>{item.label}</a>
+        ))}
+      </div>
+    </nav>
+    <a href="/connexion" class="header-admin-link" aria-label="Espace administration">
+      <span class="material-symbols-rounded">lock</span>
+    </a>
+  </div>
+</header>

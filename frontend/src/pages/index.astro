@@ -1,0 +1,172 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { fetchSingleton } from '../lib/directus';
+
+let siteInfo: any = null;
+
+try {
+  siteInfo = await fetchSingleton('site_info');
+} catch {
+  siteInfo = {
+    name: 'Andrea Simonet-Davin',
+    title: 'Psychologue à Canet-en-Roussillon',
+    phone: '06 69 35 09 12',
+    email: 'simonet.davin@gmail.com',
+    address: '168 Av. Edouard Herriot, 66140 Canet-en-Roussillon',
+    adeli: '10111639034',
+    doctolib_url: 'https://www.doctolib.fr/psychologue/canet-en-roussillon/andrea-simonet-davin'
+  };
+}
+
+const bookingUrl = 'https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=true&selectedSpeciality=psychologist&standardizedMotives=';
+---
+
+<BaseLayout
+  title="Andrea Simonet-Davin — Psychologue à Canet-en-Roussillon"
+  description="Andrea Simonet-Davin, psychologue à Canet-en-Roussillon (66). Consultations en visio, par téléphone et en entreprise. Stress, anxiété, sommeil, accompagnement féminin."
+  activePage="accueil"
+>
+
+  <!-- Hero: Qui suis-je -->
+  <section class="hero">
+    <div class="hero-photo-placeholder">
+      <img src="/andrea.webp" alt="Andrea Simonet-Davin, psychologue" />
+    </div>
+    <div class="container">
+      <div class="hero-text">
+        <p class="hero-eyebrow">{siteInfo.name}</p>
+        <h1>Psychologue &amp; thérapeute</h1>
+        <p class="hero-intro">
+          Andrea est psychologue et thérapeute, diplômée de l'Université de Lausanne. Elle accompagne des enfants, adolescents et adultes confrontés au stress, à l'anxiété, aux difficultés professionnelles, aux troubles du sommeil ou aux questionnements personnels.
+        </p>
+        <p class="hero-intro">
+          Le vécu féminin lui tient particulièrement à cœur : conflits familiaux, identité, charge mentale, rapport au corps. Chaque situation est singulière, et l'accompagnement s'adapte à ce que vous traversez.
+        </p>
+        <p class="hero-approche">
+          <span class="hero-approche-label">Cohérence cardiaque</span>
+          Technique de respiration guidée qui apaise le stress et stabilise les émotions, proposée en complément des séances.
+        </p>
+        <div class="hero-buttons" style="margin-top: 2rem;">
+          <a href={bookingUrl} class="btn btn-primary" target="_blank" rel="noopener">
+            Prendre rendez-vous
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Modalités de consultation -->
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-title">
+        <h2>Consultations</h2>
+      </div>
+      <div class="consult-primary">
+        <button class="consult-card-main" data-booking>
+          <span class="material-symbols-rounded consult-icon">video_call</span>
+          <h3>Visioconférence</h3>
+          <p class="consult-detail">45 min · 50 €</p>
+        </button>
+        <button class="consult-card-main" data-booking>
+          <span class="material-symbols-rounded consult-icon">call</span>
+          <h3>Appel téléphonique</h3>
+          <p class="consult-detail">45 min · 50 €</p>
+        </button>
+      </div>
+      <div class="consult-enterprise">
+        <div class="consult-card-main">
+          <span class="material-symbols-rounded consult-icon">business</span>
+          <h3>En entreprise</h3>
+          <p class="consult-detail">Sur devis</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Espace de confiance -->
+  <section class="section section-blue">
+    <div class="container">
+      <div class="confiance-grid">
+        <div class="confiance-text">
+          <h2>Un espace de confiance</h2>
+          <p>Chaque séance est soumise au <strong>Code de Déontologie des Psychologues</strong>. Le secret professionnel est absolu. Votre dignité et votre autonomie ne sont pas négociables.</p>
+          <p>Vous êtes accueilli(e) sans jugement, quelle que soit votre situation.</p>
+          <a href="/deontologie" class="deonto-link">Lire le code de déontologie</a>
+        </div>
+        <div class="confiance-valeurs">
+          <div class="confiance-valeur">
+            <span class="material-symbols-rounded">lock</span>
+            <strong>Confidentiel</strong>
+            <p>Tout ce qui est partagé en séance reste strictement entre vous et Andrea.</p>
+          </div>
+          <div class="confiance-valeur">
+            <span class="material-symbols-rounded">visibility_off</span>
+            <strong>Anonyme</strong>
+            <p>Aucune information personnelle n'est transmise à des tiers sans votre accord.</p>
+          </div>
+          <div class="confiance-valeur">
+            <span class="material-symbols-rounded">favorite</span>
+            <strong>Bienveillant</strong>
+            <p>Un accompagnement sans jugement, centré sur votre bien-être et votre rythme.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+<!-- Modal avant réservation -->
+<div class="booking-modal-overlay" id="bookingModal" aria-hidden="true">
+  <div class="booking-modal" role="dialog" aria-labelledby="modalTitle">
+    <div class="booking-modal-header">
+      <span>Confidentiel</span>
+      <span class="booking-modal-header-sep">·</span>
+      <span>Anonyme</span>
+      <span class="booking-modal-header-sep">·</span>
+      <span>Bienveillant</span>
+    </div>
+    <div class="booking-modal-body">
+      <h2 id="modalTitle">Avant de prendre rendez-vous</h2>
+      <p>
+        Lors de votre prise de rendez-vous, vous aurez la possibilité d'indiquer les sujets que vous souhaitez aborder.
+      </p>
+      <p>
+        Ces informations permettent à Andrea de préparer la séance et d'adapter son écoute dès le premier échange.
+      </p>
+      <p class="booking-modal-note">
+        Pas d'inquiétude si vous ne savez pas encore quoi écrire, quelques mots suffisent.
+      </p>
+      <div class="booking-modal-actions">
+        <a href={bookingUrl} class="btn btn-primary" target="_blank" rel="noopener" id="modalConfirm">
+          Continuer
+        </a>
+        <button class="booking-modal-close" id="modalClose">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const overlay = document.getElementById('bookingModal');
+  const closeBtn = document.getElementById('modalClose');
+
+  document.querySelectorAll('[data-booking]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      overlay?.removeAttribute('aria-hidden');
+      overlay?.classList.add('open');
+    });
+  });
+
+  closeBtn?.addEventListener('click', () => {
+    overlay?.setAttribute('aria-hidden', 'true');
+    overlay?.classList.remove('open');
+  });
+
+  overlay?.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.setAttribute('aria-hidden', 'true');
+      overlay.classList.remove('open');
+    }
+  });
+</script>
+
+</BaseLayout>

@@ -1,0 +1,144 @@
+---
+import '../styles/global.css';
+import { ViewTransitions } from 'astro:transitions';
+
+interface Props {
+  title: string;
+  userName?: string;
+}
+
+const { title, userName = '' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=author@300,400,500,600&f[]=gambarino@400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <title>{title}</title>
+  <ViewTransitions />
+</head>
+<body class="theme-admin admin-body">
+
+  <header class="admin-header">
+    <div class="admin-header-inner">
+      <a href="/" class="admin-logo">
+        <span class="material-symbols-rounded">arrow_back</span>
+        Site public
+      </a>
+      <span class="admin-title">Espace administration</span>
+      <div class="admin-user">
+        {userName && <span class="admin-user-name">{userName}</span>}
+        <form method="POST" action="/deconnexion" style="display:inline">
+          <button type="submit" class="admin-logout">
+            <span class="material-symbols-rounded">logout</span>
+            Déconnexion
+          </button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-main">
+    <slot />
+  </main>
+
+</body>
+</html>
+
+<style>
+  .admin-body {
+    background: #f4f2f9;
+    min-height: 100vh;
+  }
+
+  .admin-header {
+    background: var(--admin-primary, #7B6BA8);
+    color: white;
+    padding: 0 1.5rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+
+  .admin-header-inner {
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .admin-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: rgba(255,255,255,0.75);
+    text-decoration: none;
+    font-size: 0.82rem;
+    transition: color 0.2s;
+  }
+
+  .admin-logo:hover { color: white; }
+
+  .admin-logo .material-symbols-rounded {
+    font-size: 1rem;
+  }
+
+  .admin-title {
+    font-family: 'Author', serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.02em;
+  }
+
+  .admin-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .admin-user-name {
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .admin-logout {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    border-radius: 6px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .admin-logout:hover {
+    background: rgba(255,255,255,0.22);
+  }
+
+  .admin-logout .material-symbols-rounded {
+    font-size: 1rem;
+  }
+
+  .admin-main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+  }
+</style>
