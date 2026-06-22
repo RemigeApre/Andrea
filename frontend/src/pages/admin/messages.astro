@@ -2,7 +2,7 @@
 export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
-const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8056';
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8056';
 
 // Purge auto des messages > 3 mois
 try { await fetch(new URL('/api/purge-messages', Astro.url.origin)); } catch {}

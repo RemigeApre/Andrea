@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 
-const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8056';
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8056';
 const RETENTION_MS = 90 * 24 * 60 * 60 * 1000; // 3 mois
 
 export const GET: APIRoute = async () => {
@@ -21,8 +21,8 @@ export const GET: APIRoute = async () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: import.meta.env.ADMIN_EMAIL || 'andrea@simonetdavin.fr',
-        password: import.meta.env.ADMIN_PASSWORD || 'changeme123',
+        email: process.env.ADMIN_EMAIL || 'andrea@simonetdavin.fr',
+        password: process.env.ADMIN_PASSWORD || 'changeme123',
       }),
     });
     if (!authRes.ok) return new Response(JSON.stringify({ error: 'Auth failed' }), { status: 500 });

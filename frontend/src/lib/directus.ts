@@ -1,4 +1,4 @@
-const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8056';
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8056';
 
 export async function fetchItems<T>(collection: string, params?: Record<string, string>): Promise<T[]> {
   const url = new URL(`/items/${collection}`, DIRECTUS_URL);

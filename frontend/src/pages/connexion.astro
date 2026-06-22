@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 
-const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8056';
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8056';
 
 // Si déjà connectée, rediriger vers le dashboard
 const role = Astro.cookies.get('user_role')?.value;

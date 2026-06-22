@@ -2,7 +2,7 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 
-const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8056';
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8056';
 const COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000; // 2 semaines
 
 function normalizeEmail(email: string): string {
@@ -25,8 +25,8 @@ async function getAdminToken(): Promise<string> {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      email: import.meta.env.ADMIN_EMAIL || 'andrea@simonetdavin.fr',
-      password: import.meta.env.ADMIN_PASSWORD || 'changeme123',
+      email: process.env.ADMIN_EMAIL || 'andrea@simonetdavin.fr',
+      password: process.env.ADMIN_PASSWORD || 'changeme123',
     }),
   });
   if (!res.ok) throw new Error('Auth failed');

@@ -9,7 +9,7 @@ interface Props {
 }
 
 const { title, activePage = '' } = Astro.props;
-const directusUrl = import.meta.env.DIRECTUS_URL || 'http://localhost:8056';
+const directusUrl = process.env.DIRECTUS_URL || 'http://localhost:8056';
 
 const navItems = [
   { href: '/admin/notes', label: 'Notes rapides', key: 'notes', icon: 'edit_note' },
