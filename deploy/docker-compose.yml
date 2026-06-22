@@ -2,7 +2,7 @@ services:
   frontend:
     build:
       context: ../frontend
-      dockerfile: ../deploy/Dockerfile.frontend
+      dockerfile: Dockerfile
     restart: unless-stopped
     ports:
       - "127.0.0.1:4321:4321"
