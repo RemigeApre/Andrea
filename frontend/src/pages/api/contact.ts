@@ -1,6 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
+import nodemailer from 'nodemailer';
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8056';
 const COOLDOWN_MS = 14 * 24 * 60 * 60 * 1000; // 2 semaines
@@ -92,6 +93,34 @@ export const POST: APIRoute = async ({ request }) => {
         message, email_normalized: normalized, ip: ip || null, user_agent: ua || null, fingerprint: fingerprint || null,
       }),
     });
+
+    // Notification par email
+    try {
+      const smtpHost = process.env.SMTP_HOST || 'smtp.ionos.fr';
+      const smtpPort = Number(process.env.SMTP_PORT || '587');
+      const smtpUser = process.env.SMTP_USER || '';
+      const smtpPass = process.env.SMTP_PASS || '';
+      const notifyTo = process.env.NOTIFY_EMAIL || '';
+
+      if (smtpUser && smtpPass && notifyTo) {
+        const transport = nodemailer.createTransport({
+          host: smtpHost,
+          port: smtpPort,
+          secure: false,
+          auth: { user: smtpUser, pass: smtpPass },
+        });
+
+        const name = [firstname, lastname].filter(Boolean).join(' ') || 'Anonyme';
+
+        await transport.sendMail({
+          from: `"Site Andrea" <${smtpUser}>`,
+          to: notifyTo,
+          subject: `Nouveau message de ${name}`,
+          text: `De : ${name}\nEmail : ${email}\n${phone ? 'Tél : ' + phone + '\n' : ''}\n${message}`,
+          html: `<p><strong>De :</strong> ${name} &lt;${email}&gt;</p>${phone ? '<p><strong>Tél :</strong> ' + phone + '</p>' : ''}<hr><p>${message.replace(/\n/g, '<br>')}</p>`,
+        });
+      }
+    } catch {}
 
     return new Response(JSON.stringify({ ok: true }), { status: 200 });
   } catch {

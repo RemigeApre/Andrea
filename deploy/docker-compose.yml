@@ -12,6 +12,11 @@ services:
       DIRECTUS_URL: "http://directus:8055"
       ADMIN_EMAIL: "${ADMIN_EMAIL}"
       ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
+      SMTP_HOST: "${SMTP_HOST}"
+      SMTP_PORT: "${SMTP_PORT}"
+      SMTP_USER: "${SMTP_USER}"
+      SMTP_PASS: "${SMTP_PASS}"
+      NOTIFY_EMAIL: "${NOTIFY_EMAIL}"
     depends_on:
       - directus
 
