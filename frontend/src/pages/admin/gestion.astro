@@ -31,9 +31,11 @@ try {
 if (Astro.request.method === 'POST') {
   try {
     const token = getToken();
+    console.log('[gestion] token:', token ? token.substring(0, 10) + '...' : 'EMPTY');
     const auth = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
     const fd = await Astro.request.formData();
     const action = fd.get('action');
+    console.log('[gestion] action:', action);
 
     if (action === 'tarif') {
       const body: Record<string, number> = {};
@@ -43,7 +45,7 @@ if (Astro.request.method === 'POST') {
       if (d) body.duration = Number(d);
       if (tarifId) await fetch(`${DIRECTUS_URL}/items/tarifs/${tarifId}`, { method: 'PATCH', headers: auth, body: JSON.stringify(body) });
       else await fetch(`${DIRECTUS_URL}/items/tarifs`, { method: 'POST', headers: auth, body: JSON.stringify({ ...body, label: 'par séance' }) });
-      return Astro.redirect('/admin/gestion?ok=1');
+      return Astro.redirect('/admin/gestion?ok=tarif');
     }
     if (action === 'add-travail' || action === 'edit-travail') {
       const type = String(fd.get('type') ?? '').trim();
@@ -54,7 +56,7 @@ if (Astro.request.method === 'POST') {
         if (action === 'edit-travail' && id) await fetch(`${DIRECTUS_URL}/items/travaux/${id}`, { method: 'PATCH', headers: auth, body: JSON.stringify({ type, titre, url }) });
         else await fetch(`${DIRECTUS_URL}/items/travaux`, { method: 'POST', headers: auth, body: JSON.stringify({ type, titre, url }) });
       }
-      return Astro.redirect('/admin/gestion?ok=1');
+      return Astro.redirect('/admin/gestion?ok=travail');
     }
     if (action === 'delete-travail') {
       await fetch(`${DIRECTUS_URL}/items/travaux/${fd.get('id')}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
@@ -72,7 +74,7 @@ if (Astro.request.method === 'POST') {
         if (action === 'edit-fc' && id) await fetch(`${DIRECTUS_URL}/items/formations_continues/${id}`, { method: 'PATCH', headers: auth, body });
         else await fetch(`${DIRECTUS_URL}/items/formations_continues`, { method: 'POST', headers: auth, body });
       }
-      return Astro.redirect('/admin/gestion?ok=1');
+      return Astro.redirect('/admin/gestion?ok=fc');
     }
     if (action === 'delete-fc') {
       await fetch(`${DIRECTUS_URL}/items/formations_continues/${fd.get('fc_id')}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
@@ -113,7 +115,7 @@ const ok = Astro.url.searchParams.get('ok');
           </div>
           <div class="save-wrap">
             <button type="submit" class="adm-btn"><span class="material-symbols-rounded">save</span> Enregistrer</button>
-            {ok && <span class="toast">Enregistré</span>}
+            {ok === 'tarif' && <span class="toast">Enregistré</span>}
           </div>
         </div>
       </form>
@@ -147,7 +149,10 @@ const ok = Astro.url.searchParams.get('ok');
           ))}
         </div>
       )}
-      <button type="button" class="adm-btn" style="margin-top:0.75rem" id="btnAddFc"><span class="material-symbols-rounded">add</span> Ajouter</button>
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem">
+        <button type="button" class="adm-btn" id="btnAddFc"><span class="material-symbols-rounded">add</span> Ajouter</button>
+        {ok === 'fc' && <span class="toast-inline">Enregistré</span>}
+      </div>
     </div>
   </details>
 
@@ -221,7 +226,10 @@ const ok = Astro.url.searchParams.get('ok');
           ))}
         </div>
       )}
-      <button type="button" class="adm-btn" style="margin-top:0.75rem" id="btnAdd"><span class="material-symbols-rounded">add</span> Ajouter</button>
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem">
+        <button type="button" class="adm-btn" id="btnAdd"><span class="material-symbols-rounded">add</span> Ajouter</button>
+        {ok === 'travail' && <span class="toast-inline">Enregistré</span>}
+      </div>
     </div>
   </details>
 
@@ -378,6 +386,7 @@ document.addEventListener('astro:after-swap', initGestion);
 
   /* Toast */
   .save-wrap { position: relative; }
+  .toast-inline { background: #166534; color: white; font-size: 0.72rem; font-family: 'Author', serif; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 5px; animation: pop 4s ease forwards; pointer-events: none; }
   .toast { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 0.5rem; background: #166534; color: white; font-size: 0.72rem; font-family: 'Author', serif; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 5px; white-space: nowrap; animation: pop 4s ease forwards; pointer-events: none; }
   @keyframes pop { 0% { opacity: 0; transform: translateX(-50%) translateY(4px); } 8% { opacity: 1; transform: translateX(-50%) translateY(0); } 75% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(4px); } }
 
