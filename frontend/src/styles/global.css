@@ -270,16 +270,29 @@ main {
   text-transform: uppercase;
 }
 
-.hero-approche {
+.hero-approches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
   margin-top: 1.5rem;
-  padding: 1rem 1.25rem;
+}
+
+@media (max-width: 640px) {
+  .hero-approches { grid-template-columns: 1fr; }
+}
+
+.hero-approche {
+  padding: 1rem 1.15rem;
   background: rgba(28, 63, 110, 0.06);
   border-left: 2px solid rgba(28, 63, 110, 0.3);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  font-size: 0.9rem;
-  line-height: 1.7;
+}
+
+.hero-approche p {
+  font-size: 0.82rem;
+  line-height: 1.6;
   color: var(--charcoal-light);
-  margin-bottom: 0;
+  margin: 0;
 }
 
 .hero-approche-label {
