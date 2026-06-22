@@ -27,6 +27,12 @@ try {
   if (res.ok) travaux = (await res.json()).data ?? [];
 } catch {}
 
+let formations: any[] = [];
+try {
+  const res = await fetch(`${DIRECTUS_URL}/items/formations_continues?sort=-date_created`);
+  if (res.ok) formations = (await res.json()).data ?? [];
+} catch {}
+
 if (Astro.request.method === 'POST') {
   try {
     const token = await getToken();
@@ -57,6 +63,24 @@ if (Astro.request.method === 'POST') {
     }
     if (action === 'delete-travail') {
       await fetch(`${DIRECTUS_URL}/items/travaux/${fd.get('id')}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      return Astro.redirect('/admin/gestion');
+    }
+    if (action === 'add-fc' || action === 'edit-fc') {
+      const titre = String(fd.get('fc_titre') ?? '').trim();
+      const organisme = String(fd.get('fc_organisme') ?? '').trim() || null;
+      const description = String(fd.get('fc_description') ?? '').trim() || null;
+      const year = String(fd.get('fc_year') ?? '').trim() || null;
+      const url = String(fd.get('fc_url') ?? '').trim() || null;
+      if (titre) {
+        const id = fd.get('fc_id');
+        const body = JSON.stringify({ titre, organisme, description, year, url });
+        if (action === 'edit-fc' && id) await fetch(`${DIRECTUS_URL}/items/formations_continues/${id}`, { method: 'PATCH', headers: auth, body });
+        else await fetch(`${DIRECTUS_URL}/items/formations_continues`, { method: 'POST', headers: auth, body });
+      }
+      return Astro.redirect('/admin/gestion?ok=1');
+    }
+    if (action === 'delete-fc') {
+      await fetch(`${DIRECTUS_URL}/items/formations_continues/${fd.get('fc_id')}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
       return Astro.redirect('/admin/gestion');
     }
   } catch { error = 'Erreur de connexion.'; }
@@ -100,6 +124,76 @@ const ok = Astro.url.searchParams.get('ok');
       </form>
     </div>
   </details>
+
+  <!-- Formations continues -->
+  <details class="section" open>
+    <summary class="section-banner">
+      <span>Formation continue</span>
+      <span class="material-symbols-rounded banner-icon">school</span>
+      <span class="material-symbols-rounded chevron">expand_more</span>
+    </summary>
+    <div class="section-body">
+      {formations.length > 0 && (
+        <div class="trav-list">
+          {formations.map((f: any) => (
+            <div class="trav-row">
+              <span class="trav-badge" style="background:#1C3F6E">{f.year || '—'}</span>
+              <span class="trav-titre">{f.titre}</span>
+              {f.organisme && <span class="fc-admin-org">{f.organisme}</span>}
+              <div class="trav-actions">
+                <button type="button" class="trav-edit" data-fc={JSON.stringify(f)}><span class="material-symbols-rounded">edit</span></button>
+                <form method="POST" style="display:inline">
+                  <input type="hidden" name="action" value="delete-fc" />
+                  <input type="hidden" name="fc_id" value={f.id} />
+                  <button type="submit" class="trav-del" onclick="return confirm('Supprimer cette formation ?')"><span class="material-symbols-rounded">delete</span></button>
+                </form>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <button type="button" class="adm-btn" style="margin-top:0.75rem" id="btnAddFc"><span class="material-symbols-rounded">add</span> Ajouter</button>
+    </div>
+  </details>
+
+  <!-- Modal formation -->
+  <div class="overlay" id="fcModal" hidden>
+    <div class="modal">
+      <button type="button" class="modal-x" id="fcModalX"><span class="material-symbols-rounded">close</span></button>
+      <form method="POST" id="fcForm">
+        <input type="hidden" name="action" id="fcAction" value="add-fc" />
+        <input type="hidden" name="fc_id" id="fcId" />
+        <div class="modal-body">
+          <div class="row">
+            <div class="field" style="max-width:100px">
+              <label>Année</label>
+              <input type="text" name="fc_year" id="fcYear" class="input" placeholder="2025" />
+            </div>
+            <div class="field" style="flex:1">
+              <label>Titre</label>
+              <input type="text" name="fc_titre" id="fcTitre" class="input" required placeholder="Nom de la formation" />
+            </div>
+          </div>
+          <div>
+            <label>Organisme</label>
+            <input type="text" name="fc_organisme" id="fcOrg" class="input" placeholder="Plateforme ou organisme" />
+          </div>
+          <div>
+            <label>Description (optionnel)</label>
+            <textarea name="fc_description" id="fcDesc" class="textarea" rows="2" placeholder="Courte description"></textarea>
+          </div>
+          <div>
+            <label>Lien (optionnel)</label>
+            <input type="url" name="fc_url" id="fcUrl" class="input" placeholder="https://..." />
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="adm-btn adm-btn-outline" id="fcModalCancel">Annuler</button>
+          <button type="submit" class="adm-btn" id="fcModalOk">Ajouter</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <!-- Travaux -->
   <details class="section" open>
@@ -203,6 +297,40 @@ function initGestion() {
     open();
   });
 
+  // Formation continue modal
+  const fcModal = document.getElementById('fcModal')!;
+  const fcOpen = () => fcModal.hidden = false;
+  const fcClose = () => fcModal.hidden = true;
+
+  document.getElementById('fcModalX')?.addEventListener('click', fcClose);
+  document.getElementById('fcModalCancel')?.addEventListener('click', fcClose);
+  fcModal.addEventListener('click', e => { if (e.target === fcModal) fcClose(); });
+
+  document.querySelectorAll('[data-fc]').forEach(b => b.addEventListener('click', () => {
+    const f = JSON.parse((b as HTMLElement).dataset.fc!);
+    (document.getElementById('fcAction') as HTMLInputElement).value = 'edit-fc';
+    (document.getElementById('fcId') as HTMLInputElement).value = f.id;
+    (document.getElementById('fcYear') as HTMLInputElement).value = f.year || '';
+    (document.getElementById('fcTitre') as HTMLInputElement).value = f.titre;
+    (document.getElementById('fcOrg') as HTMLInputElement).value = f.organisme || '';
+    (document.getElementById('fcDesc') as HTMLTextAreaElement).value = f.description || '';
+    (document.getElementById('fcUrl') as HTMLInputElement).value = f.url || '';
+    document.getElementById('fcModalOk')!.textContent = 'Enregistrer';
+    fcOpen();
+  }));
+
+  document.getElementById('btnAddFc')?.addEventListener('click', () => {
+    (document.getElementById('fcAction') as HTMLInputElement).value = 'add-fc';
+    (document.getElementById('fcId') as HTMLInputElement).value = '';
+    (document.getElementById('fcYear') as HTMLInputElement).value = '';
+    (document.getElementById('fcTitre') as HTMLInputElement).value = '';
+    (document.getElementById('fcOrg') as HTMLInputElement).value = '';
+    (document.getElementById('fcDesc') as HTMLTextAreaElement).value = '';
+    (document.getElementById('fcUrl') as HTMLInputElement).value = '';
+    document.getElementById('fcModalOk')!.textContent = 'Ajouter';
+    fcOpen();
+  });
+
   // Toggle animation
   document.querySelectorAll<HTMLDetailsElement>('.section').forEach(d => {
     const s = d.querySelector('summary')!;
@@ -293,6 +421,8 @@ document.addEventListener('astro:after-swap', initGestion);
   .disabled-field { opacity: 0.3; pointer-events: none; }
   .disabled-field .textarea { min-height: 50px; background: #f5f5f5; }
   .modal-foot { padding: 1rem 1.5rem; border-top: 1px solid #f0f0f0; display: flex; justify-content: center; gap: 0.5rem; }
+
+  .fc-admin-org { font-size: 0.75rem; color: #999; flex-shrink: 0; }
 
   /* Dark mode */
   :global(.dark) .section { background: #1a1724; border-color: #2a2636; }
