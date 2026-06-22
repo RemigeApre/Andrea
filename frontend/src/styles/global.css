@@ -1526,6 +1526,36 @@ main {
   text-align: center !important;
 }
 
+.booking-modal-highlight {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background: var(--primary);
+  color: white;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  margin-top: 0.25rem;
+}
+
+.booking-modal-highlight .material-symbols-rounded {
+  font-size: 1.15rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  font-variation-settings: 'FILL' 1;
+}
+
+.booking-modal-highlight p {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.9);
+  margin: 0;
+  text-align: left;
+}
+
+.booking-modal-highlight strong {
+  color: white;
+}
+
 .booking-modal-actions {
   display: flex;
   flex-direction: column;
