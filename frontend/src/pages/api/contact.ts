@@ -21,17 +21,8 @@ function getIP(request: Request): string {
     || '';
 }
 
-async function getAdminToken(): Promise<string> {
-  const res = await fetch(`${DIRECTUS_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      email: process.env.ADMIN_EMAIL || 'andrea@simonetdavin.fr',
-      password: process.env.ADMIN_PASSWORD || 'changeme123',
-    }),
-  });
-  if (!res.ok) throw new Error('Auth failed');
-  return (await res.json()).data.access_token;
+function getAdminToken(): string {
+  return process.env.DIRECTUS_STATIC_TOKEN || '';
 }
 
 async function isBlocked(value: string, type: string): Promise<boolean> {
@@ -84,7 +75,7 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(JSON.stringify({ error: 'Un message a déjà été envoyé récemment.' }), { status: 429 });
     }
 
-    const adminToken = await getAdminToken();
+    const adminToken = getAdminToken();
 
     await fetch(`${DIRECTUS_URL}/items/messages`, {
       method: 'POST',

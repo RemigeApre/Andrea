@@ -16,17 +16,8 @@ export const GET: APIRoute = async () => {
     const { data } = await res.json();
     if (!data?.length) return new Response(JSON.stringify({ purged: 0 }), { status: 200 });
 
-    // Token admin pour supprimer
-    const authRes = await fetch(`${DIRECTUS_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: process.env.ADMIN_EMAIL || 'andrea@simonetdavin.fr',
-        password: process.env.ADMIN_PASSWORD || 'changeme123',
-      }),
-    });
-    if (!authRes.ok) return new Response(JSON.stringify({ error: 'Auth failed' }), { status: 500 });
-    const token = (await authRes.json()).data.access_token;
+    const token = process.env.DIRECTUS_STATIC_TOKEN || '';
+    if (!token) return new Response(JSON.stringify({ error: 'No token' }), { status: 500 });
 
     const ids = data.map((m: any) => m.id);
     await fetch(`${DIRECTUS_URL}/items/messages`, {

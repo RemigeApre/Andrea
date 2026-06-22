@@ -4,13 +4,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8056';
 
-async function getToken(): Promise<string> {
-  const r = await fetch(`${DIRECTUS_URL}/auth/login`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: process.env.ADMIN_EMAIL || 'simonet.davin@gmail.com', password: process.env.ADMIN_PASSWORD || 'changeme123' }),
-  });
-  if (r.ok) return (await r.json()).data.access_token;
-  return '';
+function getToken(): string {
+  return process.env.DIRECTUS_STATIC_TOKEN || '';
 }
 
 let price = '', duration = '', tarifId: string | null = null;
@@ -35,7 +30,7 @@ try {
 
 if (Astro.request.method === 'POST') {
   try {
-    const token = await getToken();
+    const token = getToken();
     const auth = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
     const fd = await Astro.request.formData();
     const action = fd.get('action');
