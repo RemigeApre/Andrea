@@ -163,20 +163,16 @@ const benevolas = [
         <div class="section-title">
           <h2>Formation continue</h2>
         </div>
-        <div class="fc-track-wrap">
-          <button class="fc-arrow fc-prev" aria-label="Précédent"><span class="material-symbols-rounded">chevron_left</span></button>
-          <div class="fc-track" id="fcTrack">
-            {formationsContinues.map((fc: any) => (
-              <div class="fc-card">
-                <span class="fc-year">{fc.year || ''}</span>
-                <h3 class="fc-titre">{fc.titre}</h3>
-                {fc.organisme && <p class="fc-org">{fc.organisme}</p>}
-                {fc.description && <p class="fc-desc">{fc.description}</p>}
-                {fc.url && <a href={fc.url} target="_blank" rel="noopener" class="fc-link"><span class="material-symbols-rounded">open_in_new</span></a>}
-              </div>
-            ))}
-          </div>
-          <button class="fc-arrow fc-next" aria-label="Suivant"><span class="material-symbols-rounded">chevron_right</span></button>
+        <div class="fc-track" id="fcTrack" data-count={formationsContinues.length}>
+          {formationsContinues.map((fc: any) => (
+            <div class="fc-card">
+              {fc.year && <span class="fc-year">{fc.year}</span>}
+              <h3 class="fc-titre">{fc.titre}</h3>
+              {fc.organisme && <p class="fc-org">{fc.organisme}</p>}
+              {fc.description && <p class="fc-desc">{fc.description}</p>}
+              {fc.url && <a href={fc.url} target="_blank" rel="noopener" class="fc-link"><span class="material-symbols-rounded">open_in_new</span></a>}
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -230,27 +226,35 @@ const benevolas = [
 
 <script>
 function initCarousel() {
-  const track = document.getElementById('fcTrack');
+  const track = document.getElementById('fcTrack') as HTMLElement | null;
   if (!track) return;
-  const prev = document.querySelector('.fc-prev');
-  const next = document.querySelector('.fc-next');
-  const step = 300;
-  prev?.addEventListener('click', () => track.scrollBy({ left: -step, behavior: 'smooth' }));
-  next?.addEventListener('click', () => track.scrollBy({ left: step, behavior: 'smooth' }));
+
+  const needsScroll = track.scrollWidth > track.clientWidth;
+  if (needsScroll) {
+    track.setAttribute('data-scroll', 'true');
+    let dir = 1;
+    let paused = false;
+
+    track.addEventListener('mouseenter', () => paused = true);
+    track.addEventListener('mouseleave', () => paused = false);
+    track.addEventListener('touchstart', () => paused = true);
+    track.addEventListener('touchend', () => { setTimeout(() => paused = false, 3000); });
+
+    setInterval(() => {
+      if (paused) return;
+      const max = track.scrollWidth - track.clientWidth;
+      if (track.scrollLeft >= max - 2) dir = -1;
+      if (track.scrollLeft <= 2) dir = 1;
+      track.scrollBy({ left: dir * 1, behavior: 'auto' });
+    }, 30);
+  }
 }
 initCarousel();
 document.addEventListener('astro:after-swap', initCarousel);
 </script>
 
 <style>
-  /* ── Formations continues carousel ── */
-  .fc-track-wrap {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
+  /* ── Formations continues ── */
   .fc-track {
     display: flex;
     gap: 1rem;
@@ -258,91 +262,75 @@ document.addEventListener('astro:after-swap', initCarousel);
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
     padding: 0.25rem 0;
-    flex: 1;
+    justify-content: center;
   }
 
   .fc-track::-webkit-scrollbar { display: none; }
 
+  /* Si beaucoup de cartes, aligner à gauche pour le scroll */
+  .fc-track[data-scroll="true"] {
+    justify-content: flex-start;
+  }
+
   .fc-card {
     scroll-snap-align: start;
-    min-width: 260px;
-    max-width: 280px;
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--primary);
-    border-radius: 8px;
-    padding: 1.25rem 1.25rem;
+    min-width: 240px;
+    max-width: 260px;
+    background: var(--primary);
+    border-radius: 10px;
+    padding: 1.4rem 1.25rem;
     flex-shrink: 0;
     position: relative;
   }
 
   .fc-year {
     font-family: 'Author', serif;
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     font-weight: 700;
-    color: var(--primary);
-    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.1em;
     text-transform: uppercase;
     display: block;
-    margin-bottom: 0.35rem;
-    opacity: 0.6;
+    margin-bottom: 0.4rem;
   }
 
   .fc-titre {
     font-family: 'Author', serif;
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    color: var(--charcoal);
+    color: white;
     line-height: 1.4;
-    margin: 0 0 0.3rem;
+    margin: 0 0 0.35rem;
+    padding-right: 1.5rem;
   }
 
   .fc-org {
     font-size: 0.75rem;
-    color: var(--charcoal-light);
+    color: rgba(255,255,255,0.55);
     margin: 0 0 0.4rem;
+    font-style: italic;
   }
 
   .fc-desc {
     font-size: 0.78rem;
-    color: var(--charcoal-light);
+    color: rgba(255,255,255,0.7);
     line-height: 1.55;
     margin: 0;
   }
 
   .fc-link {
     position: absolute;
-    top: 1rem;
+    top: 1.1rem;
     right: 1rem;
-    color: var(--primary);
-    opacity: 0.4;
-    transition: opacity 0.2s;
+    color: rgba(255,255,255,0.4);
+    transition: color 0.2s;
   }
 
-  .fc-link:hover { opacity: 1; }
-  .fc-link .material-symbols-rounded { font-size: 0.9rem; }
-
-  .fc-arrow {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    color: var(--primary);
-    transition: background 0.15s;
-  }
-
-  .fc-arrow:hover { background: rgba(28, 63, 110, 0.06); }
-  .fc-arrow .material-symbols-rounded { font-size: 1.2rem; }
+  .fc-link:hover { color: white; }
+  .fc-link .material-symbols-rounded { font-size: 0.95rem; }
 
   @media (max-width: 640px) {
-    .fc-arrow { display: none; }
-    .fc-card { min-width: 230px; }
+    .fc-card { min-width: 220px; }
   }
 
   /* ── About grid ─────────────────────────────────────────── */
