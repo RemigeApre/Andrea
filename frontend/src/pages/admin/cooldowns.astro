@@ -17,13 +17,11 @@ if (Astro.request.method === 'POST') {
     const fd = await Astro.request.formData();
     const ids = fd.getAll('id').map(String).filter(Boolean);
     if (ids.length) {
-      const staleToken = Astro.cookies.get('directus_token')?.value ?? '';
-      const refreshRes = await fetch(`${DIRECTUS_URL}/auth/refresh`, {
+      const authRes = await fetch(`${DIRECTUS_URL}/auth/login`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: Astro.cookies.get('directus_refresh')?.value ?? '', mode: 'json' }),
+        body: JSON.stringify({ email: process.env.ADMIN_EMAIL || 'simonet.davin@gmail.com', password: process.env.ADMIN_PASSWORD || 'changeme123' }),
       });
-      let token = staleToken;
-      if (refreshRes.ok) { token = (await refreshRes.json()).data.access_token; }
+      const token = authRes.ok ? (await authRes.json()).data.access_token : '';
 
       for (const id of ids) {
         await fetch(`${DIRECTUS_URL}/items/messages/${id}`, {

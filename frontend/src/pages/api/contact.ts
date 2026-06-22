@@ -64,7 +64,6 @@ export const POST: APIRoute = async ({ request }) => {
     const ip = getIP(request);
     const ua = request.headers.get('user-agent') || '';
 
-    console.log('[contact] email:', email, '| normalized:', normalized, '| ip:', ip);
 
     // Vérifier blacklist par email
     if (await isBlocked(normalized, 'email')) return FAKE_OK;
@@ -77,9 +76,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (fingerprint && await isBlocked(fingerprint, 'fingerprint')) return FAKE_OK;
 
     // Cooldown par email
-    const emailCd = await hasCooldown('email_normalized', normalized);
-    console.log('[contact] email cooldown:', emailCd);
-    if (emailCd) {
+    if (await hasCooldown('email_normalized', normalized)) {
       return new Response(JSON.stringify({ error: 'Un message a déjà été envoyé récemment depuis cette adresse.' }), { status: 429 });
     }
     // Cooldown par fingerprint

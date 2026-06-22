@@ -3,22 +3,14 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 
 const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8056';
-const staleToken = Astro.cookies.get('directus_token')?.value ?? '';
 
 async function getToken(): Promise<string> {
-  const test = await fetch(`${DIRECTUS_URL}/users/me`, { headers: { Authorization: `Bearer ${staleToken}` } });
-  if (test.ok) return staleToken;
-  const r = await fetch(`${DIRECTUS_URL}/auth/refresh`, {
+  const r = await fetch(`${DIRECTUS_URL}/auth/login`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: Astro.cookies.get('directus_refresh')?.value ?? '', mode: 'json' }),
+    body: JSON.stringify({ email: process.env.ADMIN_EMAIL || 'simonet.davin@gmail.com', password: process.env.ADMIN_PASSWORD || 'changeme123' }),
   });
-  if (r.ok) {
-    const { data } = await r.json();
-    Astro.cookies.set('directus_token', data.access_token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 8 });
-    if (data.refresh_token) Astro.cookies.set('directus_refresh', data.refresh_token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
-    return data.access_token;
-  }
-  return staleToken;
+  if (r.ok) return (await r.json()).data.access_token;
+  return '';
 }
 
 let price = '', duration = '', tarifId: string | null = null;
