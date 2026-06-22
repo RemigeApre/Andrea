@@ -1,0 +1,123 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8056';
+
+let messages: any[] = [];
+let success = '';
+
+try {
+  const res = await fetch(`${DIRECTUS_URL}/items/messages?sort=-date_created&limit=100&fields=id,email,email_normalized,ip,fingerprint,date_created`);
+  if (res.ok) messages = (await res.json()).data ?? [];
+} catch {}
+
+if (Astro.request.method === 'POST') {
+  try {
+    const fd = await Astro.request.formData();
+    const ids = fd.getAll('id').map(String).filter(Boolean);
+    if (ids.length) {
+      const staleToken = Astro.cookies.get('directus_token')?.value ?? '';
+      const refreshRes = await fetch(`${DIRECTUS_URL}/auth/refresh`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: Astro.cookies.get('directus_refresh')?.value ?? '', mode: 'json' }),
+      });
+      let token = staleToken;
+      if (refreshRes.ok) { token = (await refreshRes.json()).data.access_token; }
+
+      for (const id of ids) {
+        await fetch(`${DIRECTUS_URL}/items/messages/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+      return Astro.redirect('/admin/cooldowns?ok=1');
+    }
+  } catch {}
+}
+
+const ok = Astro.url.searchParams.get('ok');
+
+// Group by email_normalized to show unique senders
+const senders = new Map<string, any>();
+for (const m of messages) {
+  const key = m.email_normalized;
+  if (!senders.has(key)) {
+    senders.set(key, { email: m.email, normalized: key, ip: m.ip, fingerprint: m.fingerprint, date: m.date_created, ids: [m.id] });
+  } else {
+    senders.get(key)!.ids.push(m.id);
+  }
+}
+---
+
+<AdminLayout title="Cooldowns — Administration" activePage="administration">
+
+  <div class="cd-header">
+    <a href="/admin/administration" class="cd-back">
+      <span class="material-symbols-rounded">arrow_back</span> Administration
+    </a>
+    <h2>Déblocage des envois</h2>
+    <p>Supprimer les messages d'un expéditeur pour lui permettre d'en envoyer un nouveau.</p>
+  </div>
+
+  {ok && <div class="adm-alert adm-alert-success"><span class="material-symbols-rounded">check_circle</span> Messages supprimés, l'expéditeur peut réécrire.</div>}
+
+  {senders.size > 0 ? (
+    <div class="cd-list">
+      {[...senders.values()].map(s => {
+        const d = new Date(s.date);
+        const date = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        return (
+          <div class="cd-row">
+            <div class="cd-info">
+              <strong>{s.email}</strong>
+              <div class="cd-meta">
+                {s.ip && <span>IP : {s.ip}</span>}
+                <span>Dernier message : {date}</span>
+                <span>{s.ids.length} message{s.ids.length > 1 ? 's' : ''}</span>
+              </div>
+            </div>
+            <form method="POST" class="cd-actions">
+              {s.ids.map((id: string) => <input type="hidden" name="id" value={id} />)}
+              <button type="submit" class="cd-btn" onclick="return confirm('Supprimer tous les messages de cet expéditeur ? Il pourra renvoyer un message.')">
+                <span class="material-symbols-rounded">lock_open</span> Débloquer
+              </button>
+            </form>
+          </div>
+        );
+      })}
+    </div>
+  ) : (
+    <p class="empty">Aucun message enregistré</p>
+  )}
+
+</AdminLayout>
+
+<style>
+  .cd-header { margin-bottom: 1.5rem; }
+  .cd-back { display: inline-flex; align-items: center; gap: 0.35rem; color: #6D28D9; text-decoration: none; font-size: 0.78rem; font-family: 'Author', serif; font-weight: 600; margin-bottom: 1rem; }
+  .cd-back:hover { opacity: 0.7; }
+  .cd-back .material-symbols-rounded { font-size: 0.95rem; }
+  .cd-header h2 { font-family: 'Author', serif; font-size: 1.15rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem; }
+  :global(.dark) .cd-header h2 { color: #e0dde6; }
+  .cd-header p { font-size: 0.85rem; color: #888; }
+
+  .cd-list { display: flex; flex-direction: column; border-top: 1px solid #eee; }
+  :global(.dark) .cd-list { border-color: #2a2636; }
+
+  .cd-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #eee; }
+  :global(.dark) .cd-row { border-color: #2a2636; }
+
+  .cd-info { flex: 1; }
+  .cd-info strong { font-family: 'Author', serif; font-size: 0.92rem; color: #1a1a2e; display: block; margin-bottom: 0.2rem; }
+  :global(.dark) .cd-info strong { color: #e0dde6; }
+
+  .cd-meta { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .cd-meta span { font-size: 0.72rem; color: #999; }
+
+  .cd-btn { display: inline-flex; align-items: center; gap: 0.3rem; background: none; border: 1px solid #6D28D9; color: #6D28D9; border-radius: 6px; padding: 0.45rem 0.85rem; font-family: 'Author', serif; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: background 0.15s; flex-shrink: 0; }
+  .cd-btn:hover { background: rgba(109,40,217,0.06); }
+  .cd-btn .material-symbols-rounded { font-size: 1rem; }
+
+  .empty { text-align: center; padding: 2rem; color: #999; font-size: 0.92rem; }
+</style>

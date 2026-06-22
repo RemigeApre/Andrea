@@ -111,13 +111,44 @@ export const POST: APIRoute = async ({ request }) => {
         });
 
         const name = [firstname, lastname].filter(Boolean).join(' ') || 'Anonyme';
+        const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
         await transport.sendMail({
-          from: `"Site Andrea" <${smtpUser}>`,
+          from: `"Andrea Simonet-Davin" <${smtpUser}>`,
+          replyTo: email,
           to: notifyTo,
           subject: `Nouveau message de ${name}`,
-          text: `De : ${name}\nEmail : ${email}\n${phone ? 'Tél : ' + phone + '\n' : ''}\n${message}`,
-          html: `<p><strong>De :</strong> ${name} &lt;${email}&gt;</p>${phone ? '<p><strong>Tél :</strong> ' + phone + '</p>' : ''}<hr><p>${message.replace(/\n/g, '<br>')}</p>`,
+          text: `De : ${name}\nEmail : ${email}\n${phone ? 'Tél : ' + phone + '\n' : ''}\n${message}\n\nReçu le ${date}`,
+          html: `
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background:#f5f4f8;font-family:Georgia,serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f4f8;padding:40px 20px">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:4px;overflow:hidden">
+        <tr><td style="background:#1C3F6E;padding:24px 32px">
+          <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:1px">Andrea Simonet-Davin</span>
+          <br><span style="color:rgba(255,255,255,0.5);font-size:11px;letter-spacing:2px;text-transform:uppercase">Psychologue</span>
+        </td></tr>
+        <tr><td style="padding:32px">
+          <p style="margin:0 0 20px;font-size:13px;color:#999;text-transform:uppercase;letter-spacing:1px">Nouveau message</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px">
+            <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;color:#999;width:80px">De</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:14px;color:#1a1a2e;font-weight:700">${name}</td></tr>
+            <tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;color:#999">Email</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:14px"><a href="mailto:${email}" style="color:#1C3F6E;text-decoration:none">${email}</a></td></tr>
+            ${phone ? `<tr><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:13px;color:#999">Tél</td><td style="padding:8px 0;border-bottom:1px solid #eee;font-size:14px;color:#1a1a2e">${phone}</td></tr>` : ''}
+          </table>
+          <div style="background:#faf8f2;border-left:3px solid #1C3F6E;padding:16px 20px;border-radius:0 4px 4px 0;margin-bottom:24px">
+            <p style="margin:0;font-size:15px;line-height:1.7;color:#333">${message.replace(/\n/g, '<br>')}</p>
+          </div>
+          <p style="margin:0;font-size:12px;color:#bbb">Reçu le ${date}</p>
+        </td></tr>
+        <tr><td style="background:#faf8f2;padding:16px 32px;text-align:center">
+          <a href="https://simonet-davin.fr/admin/messages" style="color:#1C3F6E;font-size:12px;text-decoration:none;font-weight:700;letter-spacing:0.5px">Voir dans le tableau de bord</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`,
         });
       }
     } catch {}
