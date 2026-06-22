@@ -1,9 +1,12 @@
 ---
 export const prerender = false;
 
-import '../styles/global.css';
+const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8056';
 
-const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8055';
+// Si déjà connectée, rediriger vers le dashboard
+const role = Astro.cookies.get('user_role')?.value;
+if (role === 'admin') return Astro.redirect('/admin');
+if (role === 'patient') return Astro.redirect('/patient');
 
 let error = '';
 
@@ -24,6 +27,7 @@ if (Astro.request.method === 'POST') {
     } else {
       const { data: authData } = await authRes.json();
       const token = authData.access_token;
+      const refreshToken = authData.refresh_token;
 
       const meRes = await fetch(`${DIRECTUS_URL}/users/me?fields=first_name,role.name`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -42,11 +46,13 @@ if (Astro.request.method === 'POST') {
       };
 
       Astro.cookies.set('directus_token', token, cookieOpts);
+      Astro.cookies.set('directus_refresh', refreshToken, { ...cookieOpts, maxAge: 60 * 60 * 24 * 7 });
       Astro.cookies.set('user_role', role, cookieOpts);
       Astro.cookies.set('user_name', user?.first_name ?? '', { ...cookieOpts, httpOnly: false });
 
       const redirectTo = Astro.url.searchParams.get('redirect');
-      return Astro.redirect(redirectTo ?? (role === 'admin' ? '/admin' : '/patient'));
+      const dest = redirectTo ?? (role === 'admin' ? '/admin' : '/patient');
+      return Astro.redirect(dest + (dest.includes('?') ? '&' : '?') + 'logged=1');
     }
   } catch {
     error = 'Une erreur est survenue. Vérifiez votre connexion.';
@@ -60,187 +66,187 @@ if (Astro.request.method === 'POST') {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="preconnect" href="https://api.fontshare.com">
-  <link href="https://api.fontshare.com/v2/css?f[]=author@300,400,500,600&f[]=gambarino@400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/fonts.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
   <title>Connexion — Andrea Simonet-Davin</title>
 </head>
-<body class="login-body">
+<body>
 
-  <div class="login-wrap">
+  <main>
+    <div class="card-wrap">
+      <a href="/" class="back">
+        <span class="material-symbols-rounded">arrow_back</span>
+        Retour
+      </a>
+      <div class="card">
 
-    <a href="/" class="login-back">
-      <span class="material-symbols-rounded">arrow_back</span>
-      Retour au site
-    </a>
+      <!-- Bandeau violet haut -->
+      <div class="card-accent"></div>
 
-    <div class="login-card">
-      <div class="login-logo">
-        <span class="material-symbols-rounded">lock</span>
+      <div class="card-body">
+        <div class="brand">
+          <span class="brand-first">Andrea</span>
+          <span class="brand-last">Simonet-Davin</span>
+        </div>
+
+        {error && <p class="error">{error}</p>}
+
+        <form method="POST">
+          <input type="email" name="email" required autocomplete="email" placeholder="Email" />
+          <input type="password" name="password" required autocomplete="current-password" placeholder="Mot de passe" />
+          <button type="submit">Connexion</button>
+        </form>
       </div>
-      <h1>Connexion</h1>
 
-      {error && (
-        <div class="login-error">
-          <span class="material-symbols-rounded">error</span>
-          {error}
-        </div>
-      )}
-
-      <form method="POST" class="login-form">
-        <div class="login-field">
-          <label for="email">Adresse email</label>
-          <input type="email" id="email" name="email" required autocomplete="email" placeholder="votre@email.com" />
-        </div>
-        <div class="login-field">
-          <label for="password">Mot de passe</label>
-          <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••••" />
-        </div>
-        <button type="submit" class="login-submit">
-          Se connecter
-          <span class="material-symbols-rounded">arrow_forward</span>
-        </button>
-      </form>
+      </div>
     </div>
-
-  </div>
+  </main>
 
 </body>
 </html>
 
-<style>
+<style is:global>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  .login-body {
+  body {
     min-height: 100vh;
-    background: #f4f2f9;
+    background: #f5f4f8;
+    font-family: 'Gambarino', Georgia, serif;
+    display: flex;
+    flex-direction: column;
+  }
+
+  main {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Gambarino', Georgia, serif;
+    padding: 2rem;
   }
 
-  .login-wrap {
+  .card-wrap {
     width: 100%;
-    max-width: 400px;
-    padding: 1.5rem;
+    max-width: 380px;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
   }
 
-  .login-back {
+  .back {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    color: #7B6BA8;
+    gap: 0.35rem;
+    color: #aaa;
     text-decoration: none;
-    font-size: 0.85rem;
-    opacity: 0.8;
-    transition: opacity 0.2s;
-  }
-
-  .login-back:hover { opacity: 1; }
-  .login-back .material-symbols-rounded { font-size: 1rem; }
-
-  .login-card {
-    background: white;
-    border-radius: 16px;
-    padding: 2.5rem 2rem;
-    box-shadow: 0 4px 32px rgba(123, 107, 168, 0.12);
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .login-logo {
-    width: 52px;
-    height: 52px;
-    background: linear-gradient(135deg, #7B6BA8, #5a4e8a);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .login-logo .material-symbols-rounded {
-    color: white;
-    font-size: 1.5rem;
-  }
-
-  h1 {
-    font-family: 'Author', serif;
-    font-size: 1.6rem;
-    color: #1C3F6E;
-  }
-
-  .login-error {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #b91c1c;
-    border-radius: 8px;
-    padding: 0.75rem 1rem;
-    font-size: 0.88rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .login-error .material-symbols-rounded { font-size: 1.1rem; }
-
-  .login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.1rem;
-  }
-
-  .login-field {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-  }
-
-  label {
     font-size: 0.78rem;
     font-family: 'Author', serif;
-    font-weight: 600;
-    color: #1C3F6E;
+    transition: color 0.2s;
+  }
+  .back:hover { color: #6D28D9; }
+  .back .material-symbols-rounded { font-size: 0.95rem; }
+
+  /* ── Card ── */
+  .card {
+    width: 100%;
+    background: white;
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.06),
+      0 12px 40px rgba(109, 40, 217, 0.06);
+  }
+
+  .card-accent {
+    height: 3px;
+    background: #6D28D9;
+  }
+
+  .card-body {
+    padding: 2.5rem 2rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* ── Brand ── */
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding-bottom: 1.75rem;
+    border-bottom: 1px solid #eee;
+  }
+
+  .brand-first {
+    font-family: 'Author', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: 0.03em;
+  }
+
+  .brand-last {
+    font-family: 'Gambarino', Georgia, serif;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    color: #bbb;
+  }
+
+  /* ── Error ── */
+  .error {
+    font-size: 0.82rem;
+    color: #dc2626;
+    text-align: center;
+    margin: -0.5rem 0;
+  }
+
+  /* ── Form ── */
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
   }
 
   input {
-    border: 1.5px solid #e2e0ea;
-    border-radius: 8px;
-    padding: 0.7rem 0.9rem;
-    font-size: 0.95rem;
+    width: 100%;
+    background: none;
+    border: none;
+    border-bottom: 1px solid #e0dfe6;
+    padding: 0.65rem 0;
+    font-size: 0.92rem;
     font-family: 'Gambarino', Georgia, serif;
-    color: #333;
+    color: #1a1a2e;
     outline: none;
     transition: border-color 0.2s;
-    width: 100%;
+    border-radius: 0;
   }
 
-  input:focus { border-color: #7B6BA8; }
+  input::placeholder { color: #c5c3cf; }
+  input:focus { border-bottom-color: #6D28D9; }
 
-  .login-submit {
-    margin-top: 0.25rem;
-    background: linear-gradient(135deg, #7B6BA8, #5a4e8a);
+  button {
+    margin-top: 1rem;
+    background: #6D28D9;
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 0.85rem 1.25rem;
+    padding: 0.8rem;
     font-family: 'Author', serif;
-    font-size: 1rem;
+    font-size: 0.88rem;
     font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    transition: opacity 0.2s;
+    transition: background 0.2s;
+    border-radius: 2px;
   }
 
-  .login-submit:hover { opacity: 0.88; }
-  .login-submit .material-symbols-rounded { font-size: 1.1rem; }
+  button:hover { background: #5B21B6; }
+
+  @media (max-width: 480px) {
+    main { padding: 1.25rem; }
+    .card-body { padding: 2rem 1.5rem 1.75rem; }
+  }
 </style>

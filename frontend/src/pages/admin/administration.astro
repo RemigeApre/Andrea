@@ -1,0 +1,213 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8056';
+const token = Astro.cookies.get('directus_token')?.value ?? '';
+
+let success = '';
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  try {
+    const data = await Astro.request.formData();
+    const current = String(data.get('current') ?? '');
+    const password = String(data.get('password') ?? '');
+    const confirm = String(data.get('confirm') ?? '');
+
+    if (!current || !password || !confirm) {
+      error = 'Tous les champs sont obligatoires.';
+    } else if (password !== confirm) {
+      error = 'Les mots de passe ne correspondent pas.';
+    } else if (password.length < 8) {
+      error = 'Le mot de passe doit contenir au moins 8 caractères.';
+    } else {
+      // Verify current password
+      const authRes = await fetch(`${DIRECTUS_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: (await fetch(`${DIRECTUS_URL}/users/me?fields=email`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }).then(r => r.json())).data.email,
+          password: current,
+        }),
+      });
+
+      if (!authRes.ok) {
+        error = 'Mot de passe actuel incorrect.';
+      } else {
+        // Update password
+        const res = await fetch(`${DIRECTUS_URL}/users/me`, {
+          method: 'PATCH',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+
+        if (res.ok) {
+          success = 'Mot de passe modifié.';
+        } else {
+          error = 'Erreur lors de la modification.';
+        }
+      }
+    }
+  } catch {
+    error = 'Une erreur est survenue.';
+  }
+}
+---
+
+<AdminLayout title="Administration — Andrea Simonet-Davin" activePage="administration">
+
+{success && (
+    <div class="adm-alert adm-alert-success">
+      <span class="material-symbols-rounded">check_circle</span>
+      {success}
+    </div>
+  )}
+
+  {error && (
+    <div class="adm-alert adm-alert-error">
+      <span class="material-symbols-rounded">error</span>
+      {error}
+    </div>
+  )}
+
+  <div class="adm-card">
+    <h2 class="adm-card-title">
+      <span class="material-symbols-rounded">lock</span>
+      Changer le mot de passe
+    </h2>
+    <form method="POST">
+      <div style="display: flex; flex-direction: column; gap: 0.9rem;">
+        <div>
+          <label class="adm-label">Mot de passe actuel</label>
+          <input type="password" name="current" class="adm-input" required autocomplete="current-password" />
+        </div>
+        <div>
+          <label class="adm-label">Nouveau mot de passe</label>
+          <input type="password" name="password" class="adm-input" required autocomplete="new-password" placeholder="8 caractères minimum" />
+        </div>
+        <div>
+          <label class="adm-label">Confirmer</label>
+          <input type="password" name="confirm" class="adm-input" required autocomplete="new-password" />
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 0.25rem;">
+          <button type="submit" class="adm-btn">
+            <span class="material-symbols-rounded">save</span>
+            Modifier
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Blacklist -->
+  <div class="adm-card">
+    <h2 class="adm-card-title">
+      <span class="material-symbols-rounded">block</span>
+      Blocages
+    </h2>
+    <div id="blacklistArea">
+      <p class="adm-empty" style="padding:1rem">Chargement...</p>
+    </div>
+    <div style="display:flex;gap:0.5rem;margin-top:0.75rem">
+      <input type="email" id="blEmail" class="adm-input" placeholder="email@exemple.com" style="flex:1" />
+      <button type="button" class="adm-btn" id="blAdd"><span class="material-symbols-rounded">add</span> Bloquer</button>
+    </div>
+  </div>
+
+  <a href="/admin/logs" class="logs-link">
+    <span class="material-symbols-rounded">history</span>
+    Journal d'activité
+    <span class="material-symbols-rounded">arrow_forward</span>
+  </a>
+
+</AdminLayout>
+
+<script>
+function initBl() {
+  const DIRECTUS = document.querySelector('meta[name="directus-url"]')?.getAttribute('content') || 'http://localhost:8056';
+  const area = document.getElementById('blacklistArea')!;
+  const input = document.getElementById('blEmail') as HTMLInputElement;
+
+  function normalize(email: string): string {
+    const [local, domain] = email.toLowerCase().trim().split('@');
+    if (!local || !domain) return email.toLowerCase().trim();
+    const gmail = ['gmail.com', 'googlemail.com'];
+    const clean = gmail.includes(domain) ? local.replace(/\./g, '').split('+')[0] : local.split('+')[0];
+    return `${clean}@${domain}`;
+  }
+
+  async function getToken() {
+    // Essayer le cookie token via une requête pour vérifier
+    const stored = document.cookie.split(';').find(c => c.trim().startsWith('directus_token='));
+    return stored?.split('=')?.[1] || '';
+  }
+
+  async function load() {
+    try {
+      const res = await fetch(`${DIRECTUS}/items/blacklist?sort=date_created`);
+      if (!res.ok) { area.innerHTML = '<p class="adm-empty">Erreur de chargement</p>'; return; }
+      const { data } = await res.json();
+      if (!data?.length) { area.innerHTML = '<p class="adm-empty" style="padding:0.5rem">Aucun email bloqué</p>'; return; }
+      const typeLabels: Record<string,string> = { email: 'Email', ip: 'IP', fingerprint: 'Appareil' };
+      area.innerHTML = data.map((b: any) => `
+        <div style="display:flex;align-items:center;gap:0.5rem;padding:0.5rem 0;border-bottom:1px solid #eee">
+          <span style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;color:#6D28D9;font-family:Author,serif;font-weight:700;min-width:50px">${typeLabels[b.type] || b.type || 'Email'}</span>
+          <span style="font-size:0.85rem;color:#333;flex:1">${b.email_normalized}</span>
+          <button class="bl-del" data-id="${b.id}" style="background:none;border:none;color:#dc2626;cursor:pointer;padding:0.25rem;display:flex"><span class="material-symbols-rounded" style="font-size:1rem">close</span></button>
+        </div>
+      `).join('');
+      area.querySelectorAll('.bl-del').forEach(btn => btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).dataset.id;
+        const token = await getToken();
+        await fetch(`${DIRECTUS}/items/blacklist/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+        load();
+      }));
+    } catch { area.innerHTML = '<p class="adm-empty">Erreur</p>'; }
+  }
+
+  document.getElementById('blAdd')?.addEventListener('click', async () => {
+    const email = input.value.trim();
+    if (!email) return;
+    const token = await getToken();
+    await fetch(`${DIRECTUS}/items/blacklist`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email_normalized: normalize(email) }),
+    });
+    input.value = '';
+    load();
+  });
+
+  load();
+}
+initBl();
+document.addEventListener('astro:after-swap', initBl);
+</script>
+
+<style>
+  .logs-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    padding: 1rem 1.25rem;
+    background: #faf8f2;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    text-decoration: none;
+    color: #1a1a2e;
+    font-family: 'Author', serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    transition: border-color 0.2s;
+  }
+  .logs-link:hover { border-color: #6D28D9; }
+  .logs-link .material-symbols-rounded { font-size: 1.1rem; color: #6D28D9; }
+  .logs-link .material-symbols-rounded:last-child { margin-left: auto; color: #ccc; font-size: 0.95rem; }
+  :global(.dark) .logs-link { background: #1a1724; border-color: #2a2636; color: #e0dde6; }
+  :global(.dark) .logs-link:hover { border-color: #6D28D9; }
+</style>

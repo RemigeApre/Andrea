@@ -221,6 +221,10 @@ ul {
   height: 24px;
 }
 
+.nav-link-mobile-only {
+  display: none;
+}
+
 /* ===== Main Content ===== */
 main {
   min-height: calc(100vh - 70px - 280px);
@@ -234,7 +238,7 @@ main {
   overflow: hidden;
 }
 
-/* Cerisier décoratif — coin supérieur droit */
+/* Cerisier décoratif — coin supérieur droit, sous le contenu */
 .hero::before {
   content: '';
   position: absolute;
@@ -242,10 +246,15 @@ main {
   right: -80px;
   width: 900px;
   height: 780px;
-  background: url('/cerisier.png') no-repeat right top / contain;
+  background: url('/cerisier.webp') no-repeat right top / contain;
   opacity: 0.55;
   pointer-events: none;
   z-index: 0;
+}
+
+.hero .container,
+.hero-photo-placeholder {
+  z-index: 1;
 }
 
 .hero-badge {
@@ -1179,11 +1188,12 @@ main {
 
 .hero-photo-placeholder {
   position: absolute;
-  left: max(1rem, calc(25vw - 260px));
+  /* centré entre le bord gauche du viewport et le bord gauche du texte (560px centré) */
+  left: calc(25vw - 310px);
   top: 50%;
   transform: translateY(-50%);
-  width: 300px;
-  height: 400px;
+  width: 320px;
+  height: 420px;
   border-radius: var(--radius);
   overflow: hidden;
   z-index: 1;
@@ -1544,7 +1554,18 @@ main {
   color: rgba(255, 255, 255, 0.4);
 }
 
-/* ===== Responsive ===== */
+
+/* ===== Responsive — Écran moyen (<1300px) ===== */
+@media (max-width: 1300px) {
+  .hero-photo-placeholder {
+    position: static;
+    transform: none;
+    display: block;
+    margin: 0 auto 2rem;
+  }
+}
+
+/* ===== Responsive — Tablette (768px) ===== */
 @media (max-width: 768px) {
   h1 { font-size: 1.8rem; }
   h2 { font-size: 1.4rem; }
@@ -1553,8 +1574,22 @@ main {
     height: 60px;
   }
 
+  .header-nav {
+    position: static;
+    transform: none;
+    margin-left: auto;
+  }
+
   .menu-toggle {
     display: flex;
+  }
+
+  .header-admin-link {
+    display: none;
+  }
+
+  .nav-link-mobile-only {
+    display: block;
   }
 
   .nav-links {
@@ -1585,18 +1620,83 @@ main {
     border-bottom: none;
   }
 
+  /* Hero */
   .hero {
     padding: 3rem 0 2.5rem;
+  }
+
+  .hero::before {
+    width: 500px;
+    height: 400px;
+    top: -40px;
+    right: -60px;
+    opacity: 0.35;
   }
 
   .hero h1 {
     font-size: 2rem;
   }
 
-  .hero .subtitle {
-    font-size: 1rem;
+  .hero-photo-placeholder {
+    width: 160px;
+    height: 210px;
   }
 
+  /* Consultations */
+  .consult-primary {
+    grid-template-columns: 1fr;
+  }
+
+  .consult-enterprise .consult-card-main {
+    width: 100%;
+  }
+
+  .consult-secondary {
+    grid-template-columns: 1fr;
+  }
+
+  /* Confiance */
+  .confiance-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  /* Urgences */
+  .footer-urgences-nums {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .footer-urgences-sep {
+    width: 100%;
+    height: 1px;
+    margin: 0.75rem 0;
+  }
+
+  .footer-urgence-item--soutien span {
+    font-size: 0.82rem;
+  }
+
+  /* Footer bottom */
+  .footer-links {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .footer-bottom {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .footer-copyright,
+  .footer-ext-links {
+    justify-self: center;
+  }
+
+  /* Général */
   .cards {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -1606,45 +1706,9 @@ main {
     grid-template-columns: 1fr;
   }
 
-  .hero-layout {
-    flex-direction: column-reverse;
-    gap: 2rem;
-    padding: 3rem 0;
-  }
-
-  .hero-photo-placeholder {
-    width: 160px;
-    height: 200px;
-    margin: 0 auto;
-  }
-
-  .hero h1 {
-    font-size: 2rem;
-  }
-
-  .hero-credentials {
-    justify-content: center;
-  }
-
-  .hero-with-photo .hero-buttons {
-    justify-content: center;
-  }
-
   .contact-summary-info {
     flex-direction: column;
     gap: 1.5rem;
-  }
-
-  .footer-links {
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-
-  .footer-bottom {
-    flex-direction: column;
-    gap: 0.4rem;
-    text-align: center;
-    align-items: center;
   }
 
   .info-list li {
@@ -1671,11 +1735,49 @@ main {
   .pricing-card .price {
     font-size: 2.2rem;
   }
+
+  /* Modal */
+  .booking-modal {
+    max-width: 100%;
+    margin: 1rem;
+  }
+
+  .booking-modal-header {
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .booking-modal-header span {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+
+  .booking-modal-body {
+    padding: 1.5rem;
+  }
+
+  .booking-modal-body p {
+    text-align: left;
+  }
 }
 
+/* ===== Responsive — Mobile (480px) ===== */
 @media (max-width: 480px) {
+  .hero {
+    padding: 2rem 0 2rem;
+  }
+
+  .hero::before {
+    display: none;
+  }
+
   .hero h1 {
     font-size: 1.7rem;
+  }
+
+  .hero-photo-placeholder {
+    width: 140px;
+    height: 180px;
   }
 
   .hero-buttons {
@@ -1688,4 +1790,71 @@ main {
     justify-content: center;
     max-width: 280px;
   }
+
+  .consult-card-main {
+    padding: 1.75rem 1.25rem;
+  }
+
+  .consult-icon {
+    font-size: 1.8rem;
+  }
+
+  /* Urgences footer — empilé proprement */
+  .footer-urgence-item {
+    padding: 0.4rem 0.75rem;
+  }
+
+  .footer-urgence-item span {
+    font-size: 1rem;
+  }
+
+  .footer-urgence-item-label {
+    font-size: 0.55rem;
+  }
+
+  .footer-urgence-item--soutien {
+    flex-direction: row;
+    gap: 0.4rem;
+  }
+
+  .footer-urgence-item--soutien span {
+    font-size: 0.78rem;
+  }
+}
+
+/* ===== Skip to content ===== */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--primary);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0 0 6px 6px;
+  font-family: 'Author', serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 200;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ===== Anti-impression & anti-sélection contenu ===== */
+@media print {
+  body { display: none !important; }
+}
+
+body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.hero-intro, .hero-approche, .confiance-text p,
+.deonto-intro p, .engagement-card p, .principe-item p,
+.faq-answer p, .about-text p, .timeline-desc, .benevola-desc {
+  -webkit-user-select: text;
+  user-select: text;
 }

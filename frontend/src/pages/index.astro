@@ -1,8 +1,11 @@
 ---
+export const prerender = false;
+
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { fetchSingleton } from '../lib/directus';
+import { fetchSingleton, fetchItems } from '../lib/directus';
 
 let siteInfo: any = null;
+let tarif: any = null;
 
 try {
   siteInfo = await fetchSingleton('site_info');
@@ -18,6 +21,13 @@ try {
   };
 }
 
+try {
+  const tarifs = await fetchItems('tarifs', { limit: '1' });
+  if (tarifs.length > 0) tarif = tarifs[0];
+} catch {}
+
+const prix = tarif?.price_min ?? '60';
+const duree = tarif?.duration ?? '45';
 const bookingUrl = 'https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=true&selectedSpeciality=psychologist&standardizedMotives=';
 ---
 
@@ -30,7 +40,7 @@ const bookingUrl = 'https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=t
   <!-- Hero: Qui suis-je -->
   <section class="hero">
     <div class="hero-photo-placeholder">
-      <img src="/andrea.webp" alt="Andrea Simonet-Davin, psychologue" />
+      <img src="/andrea.webp" alt="Andrea Simonet-Davin, psychologue" loading="lazy" />
     </div>
     <div class="container">
       <div class="hero-text">
@@ -65,12 +75,12 @@ const bookingUrl = 'https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=t
         <button class="consult-card-main" data-booking>
           <span class="material-symbols-rounded consult-icon">video_call</span>
           <h3>Visioconférence</h3>
-          <p class="consult-detail">45 min · 50 €</p>
+          <p class="consult-detail">{duree} min · {prix} €</p>
         </button>
         <button class="consult-card-main" data-booking>
           <span class="material-symbols-rounded consult-icon">call</span>
           <h3>Appel téléphonique</h3>
-          <p class="consult-detail">45 min · 50 €</p>
+          <p class="consult-detail">{duree} min · {prix} €</p>
         </button>
       </div>
       <div class="consult-enterprise">

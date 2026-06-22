@@ -13,38 +13,40 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <div class="legal-content">
 
         <h1>Mentions légales</h1>
-        <p class="legal-intro">Conformément aux dispositions de la loi n° 2004-575 du 21 juin 2004 pour la confiance en l'économie numérique.</p>
+        <p class="legal-intro">Conformément aux dispositions des articles 6-III et 19 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l'économie numérique, dite loi LCEN, il est porté à la connaissance des utilisateurs et visiteurs du présent site les informations suivantes.</p>
 
         <div class="legal-block">
-          <h2>Éditeur du site</h2>
-          <ul>
-            <li><span>Nom</span> Andrea Simonet-Davin</li>
-            <li><span>Profession</span> Psychologue</li>
-            <li><span>SIRET</span> 99330485600012</li>
-            <li><span>N° ADELI</span> 10111639034</li>
-            <li><span>Adresse</span> 168 Avenue Edouard Herriot, 66140 Canet-en-Roussillon</li>
-            <li><span>Email</span> simonet.davin@gmail.com</li>
-          </ul>
+          <h2>Objet du site</h2>
+          <p>Le présent site a pour objet la présentation de l'activité professionnelle de psychologue exercée par l'éditrice. Il permet aux visiteurs de prendre connaissance des modalités de consultation, du parcours professionnel et des engagements déontologiques de la praticienne. Le site propose également un formulaire de contact permettant d'adresser une demande d'information.</p>
+        </div>
+
+        <div class="legal-block">
+          <h2>Éditrice</h2>
+          <p>Le présent site est édité par une psychologue exerçant en libéral, inscrite au répertoire ADELI sous le numéro <span class="legal-muted">10111639034</span> et immatriculée sous le numéro SIRET <span class="legal-muted">99330485600012</span>.</p>
+          <p>L'éditrice peut être contactée par voie électronique à l'adresse suivante : <span class="legal-email" data-u="simonet.davin" data-d="gmail.com"></span>.</p>
+          <p>L'adresse du cabinet est consultable sur les plateformes de prise de rendez-vous référencées sur ce site.</p>
         </div>
 
         <div class="legal-block">
           <h2>Hébergement</h2>
-          <ul>
-            <li><span>Hébergeur</span> OVHcloud</li>
-            <li><span>Adresse</span> 2 rue Kellermann, 59100 Roubaix, France</li>
-            <li><span>Site</span> ovhcloud.com</li>
-            <li><span>Nom de domaine</span> Enregistré via Ionos (1&1 IONOS SE)</li>
-          </ul>
+          <p>Le site est hébergé par la société OVHcloud, dont le siège social est situé au 2 rue Kellermann, 59100 Roubaix, France. Le nom de domaine est enregistré auprès de la société IONOS SE (1&1 Ionos). Les coordonnées complètes de ces prestataires sont disponibles sur leurs sites respectifs.</p>
         </div>
 
         <div class="legal-block">
-          <h2>Réalisation</h2>
-          <p>Ce site a été conçu, réalisé et est maintenu par <strong>Le Geai</strong>, pour le compte d'Andrea Simonet-Davin, psychologue. Le contenu éditorial, les textes et les visuels restent la propriété exclusive d'Andrea Simonet-Davin. Toute reproduction sans autorisation écrite préalable est interdite.</p>
+          <h2>Conception et maintenance</h2>
+          <p>La conception, le développement et la maintenance technique du présent site sont assurés par la société <strong>Le Geai</strong>, pour le compte de l'éditrice. Le contenu rédactionnel, les photographies et les éléments graphiques demeurent la propriété exclusive de l'éditrice. Toute reproduction, même partielle, est soumise à autorisation écrite préalable.</p>
         </div>
 
         <div class="legal-block">
-          <h2>Responsabilité</h2>
-          <p>Les informations publiées sur ce site sont fournies à titre informatif et ne constituent pas un avis ou une consultation psychologique. En cas d'urgence, contactez le 15 ou le 3114.</p>
+          <h2>Données personnelles</h2>
+          <p>Le formulaire de contact présent sur ce site collecte les données suivantes : adresse électronique (obligatoire), prénom, nom et numéro de téléphone (facultatifs), ainsi que le contenu du message. Des données techniques (adresse IP, identifiant de navigateur) sont également collectées à des fins de sécurité et de prévention des abus.</p>
+          <p>Ces données sont conservées pour une durée maximale de trois mois à compter de leur collecte, puis automatiquement supprimées. Par exception, en cas de contentieux, de litige ou d'incident de nature légale, les données concernées peuvent être conservées en archivage intermédiaire pour la durée strictement nécessaire à la défense des droits de l'éditrice, conformément aux dispositions de l'article 5.1.e du Règlement Général sur la Protection des Données.</p>
+          <p>Pour toute information complémentaire, se reporter à la <a href="/politique-de-confidentialite">politique de confidentialité</a>.</p>
+        </div>
+
+        <div class="legal-block">
+          <h2>Limitation de responsabilité</h2>
+          <p>Les informations publiées sur le présent site sont fournies à titre strictement informatif et ne sauraient se substituer à un avis professionnel, une consultation psychologique ou un diagnostic. L'éditrice ne peut être tenue responsable de l'interprétation faite des contenus par les visiteurs. En situation d'urgence, il convient de contacter le 15 (SAMU) ou le 3114 (numéro national de prévention du suicide).</p>
         </div>
 
       </div>
@@ -119,6 +121,32 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     font-size: 0.9rem;
     color: var(--charcoal);
     line-height: 1.7;
-    margin: 0;
+    margin: 0 0 0.6rem;
+  }
+
+  p:last-child { margin-bottom: 0; }
+
+  .legal-muted {
+    color: var(--charcoal-light);
+    font-size: 0.82rem;
+  }
+
+  .legal-email::after {
+    content: attr(data-u) "\0040" attr(data-d);
+    color: var(--charcoal-light);
+    font-size: 0.82rem;
   }
 </style>
+
+<script>
+  // Reconstruit les liens mailto au clic pour les humains
+  document.querySelectorAll('.legal-email').forEach(el => {
+    el.addEventListener('click', () => {
+      const u = (el as HTMLElement).dataset.u;
+      const d = (el as HTMLElement).dataset.d;
+      if (u && d) window.location.href = 'mai' + 'lto:' + u + '@' + d;
+    });
+    (el as HTMLElement).style.cursor = 'pointer';
+    (el as HTMLElement).title = 'Cliquez pour envoyer un email';
+  });
+</script>

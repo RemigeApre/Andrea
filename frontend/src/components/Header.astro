@@ -29,6 +29,7 @@ const navItems = [
         {navItems.map(item => (
           <a href={item.href} class={activePage === item.key ? 'active' : ''}>{item.label}</a>
         ))}
+        <a href="/connexion" class="nav-link-mobile-only">Connexion</a>
       </div>
     </nav>
     <a href="/connexion" class="header-admin-link" aria-label="Espace administration">

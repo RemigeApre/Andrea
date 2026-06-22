@@ -1,4 +1,5 @@
 ---
+import '../styles/fonts.css';
 import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
@@ -41,6 +42,11 @@ try {
   <meta property="og:description" content={description}>
   <meta property="og:type" content="website">
   <meta property="og:locale" content="fr_FR">
+  <meta property="og:image" content="/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="/og.png">
   <link rel="canonical" href={Astro.url.href}>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script type="application/ld+json" set:html={JSON.stringify({
@@ -60,23 +66,54 @@ try {
     "url": Astro.site ?? Astro.url.origin,
     "knowsLanguage": ["fr", "en", "pt"]
   })} />
-  <link rel="preconnect" href="https://api.fontshare.com">
-  <link href="https://api.fontshare.com/v2/css?f[]=author@300,400,500,600&f[]=gambarino@400&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
   <title>{title}</title>
   <ViewTransitions />
 </head>
 <body class={adminTheme ? 'theme-admin' : ''}>
+  <a href="#main" class="skip-link">Aller au contenu</a>
   <Header activePage={activePage} siteInfo={siteInfo} />
-  <main>
+  <main id="main">
     <slot />
   </main>
   <Footer siteInfo={siteInfo} />
 
-  <button class="floating-rdv" data-booking aria-label="Prendre rendez-vous">
-    <span class="material-symbols-rounded">calendar_month</span>
-    <span class="floating-rdv-label">Prendre rendez-vous</span>
-  </button>
+  <!-- Pastilles flottantes -->
+  <div class="floating-btns">
+    <button class="floating-btn floating-contact" id="contactToggle" aria-label="Contacter">
+      <span class="material-symbols-rounded">mail</span>
+      <span class="floating-label">Contacter</span>
+    </button>
+    <button class="floating-btn floating-rdv" data-booking aria-label="Prendre rendez-vous">
+      <span class="material-symbols-rounded">calendar_month</span>
+      <span class="floating-label">Prendre rendez-vous</span>
+    </button>
+  </div>
+
+  <!-- Panneau contact -->
+  <div class="contact-panel" id="contactPanel" hidden>
+    <div class="contact-panel-inner">
+      <button class="contact-close" id="contactClose"><span class="material-symbols-rounded">close</span></button>
+      <form id="contactForm">
+        <input type="email" name="email" required placeholder="Votre email *" class="contact-input" />
+        <div class="contact-row">
+          <input type="text" name="firstname" placeholder="Prénom" class="contact-input" />
+          <input type="text" name="lastname" placeholder="Nom" class="contact-input" />
+        </div>
+        <input type="tel" name="phone" placeholder="Téléphone" class="contact-input" />
+        <textarea name="message" required placeholder="Votre message *" class="contact-textarea" rows="4" minlength="10" maxlength="5000"></textarea>
+        <!-- Honeypot -->
+        <input type="text" name="token" style="display:none" tabindex="-1" autocomplete="off" />
+        <input type="hidden" name="_ts" />
+        <div class="contact-footer">
+          <span class="contact-note">1 message par quinzaine</span>
+          <button type="submit" class="btn btn-primary contact-send" id="contactSend">Envoyer</button>
+        </div>
+        <p class="contact-status" id="contactStatus"></p>
+      </form>
+    </div>
+  </div>
 
   <!-- Modal avant réservation -->
   <div class="booking-modal-overlay" id="bookingModal" aria-hidden="true">
@@ -110,74 +147,263 @@ try {
   </div>
 
   <script>
-    document.querySelector('.menu-toggle')?.addEventListener('click', () => {
-      document.querySelector('.nav-links')?.classList.toggle('open');
-    });
-
-    const overlay = document.getElementById('bookingModal');
-    const closeBtn = document.getElementById('modalClose');
-
-    document.querySelectorAll('[data-booking]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        overlay?.removeAttribute('aria-hidden');
-        overlay?.classList.add('open');
+    function initPage() {
+      document.querySelector('.menu-toggle')?.addEventListener('click', () => {
+        document.querySelector('.nav-links')?.classList.toggle('open');
       });
+
+      const overlay = document.getElementById('bookingModal');
+      const closeBtn = document.getElementById('modalClose');
+
+      document.querySelectorAll('[data-booking]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          overlay?.removeAttribute('aria-hidden');
+          overlay?.classList.add('open');
+        });
+      });
+
+      closeBtn?.addEventListener('click', () => {
+        overlay?.setAttribute('aria-hidden', 'true');
+        overlay?.classList.remove('open');
+      });
+
+      overlay?.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.setAttribute('aria-hidden', 'true');
+          overlay.classList.remove('open');
+        }
+      });
+    }
+
+    // Contact panel
+    const panel = document.getElementById('contactPanel');
+    const contactForm = document.getElementById('contactForm') as HTMLFormElement | null;
+    const contactStatus = document.getElementById('contactStatus');
+
+    document.getElementById('contactToggle')?.addEventListener('click', () => {
+      if (panel) { panel.hidden = !panel.hidden; }
+      // Set timestamp for anti-bot
+      const tsField = contactForm?.querySelector('[name="_ts"]') as HTMLInputElement;
+      if (tsField) tsField.value = String(Date.now());
     });
 
-    closeBtn?.addEventListener('click', () => {
-      overlay?.setAttribute('aria-hidden', 'true');
-      overlay?.classList.remove('open');
+    document.getElementById('contactClose')?.addEventListener('click', () => {
+      if (panel) panel.hidden = true;
     });
 
-    overlay?.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        overlay.setAttribute('aria-hidden', 'true');
-        overlay.classList.remove('open');
+    // Fingerprint basique
+    function getFingerprint(): string {
+      const parts = [
+        navigator.language,
+        screen.width + 'x' + screen.height,
+        screen.colorDepth,
+        Intl.DateTimeFormat().resolvedOptions().timeZone,
+        navigator.hardwareConcurrency || 0,
+        navigator.platform,
+      ];
+      try {
+        const c = document.createElement('canvas');
+        const ctx = c.getContext('2d');
+        if (ctx) { ctx.textBaseline = 'top'; ctx.font = '14px Arial'; ctx.fillText('fp', 2, 2); parts.push(c.toDataURL().slice(-50)); }
+      } catch {}
+      let h = 0;
+      const s = parts.join('|');
+      for (let i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+      return 'fp_' + Math.abs(h).toString(36);
+    }
+
+    contactForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(contactForm);
+      const btn = document.getElementById('contactSend') as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = 'Envoi...';
+      if (contactStatus) contactStatus.textContent = '';
+
+      try {
+        const res = await fetch('/api/contact', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: fd.get('email'),
+            phone: fd.get('phone'),
+            firstname: fd.get('firstname'),
+            lastname: fd.get('lastname'),
+            message: fd.get('message'),
+            token: fd.get('token'),
+            _ts: Number(fd.get('_ts')),
+            fingerprint: getFingerprint(),
+          }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          if (contactStatus) { contactStatus.textContent = 'Message envoyé.'; contactStatus.className = 'contact-status ok'; }
+          contactForm.reset();
+          setTimeout(() => { if (panel) panel.hidden = true; }, 2000);
+        } else {
+          if (contactStatus) { contactStatus.textContent = data.error || 'Erreur.'; contactStatus.className = 'contact-status err'; }
+        }
+      } catch {
+        if (contactStatus) { contactStatus.textContent = 'Erreur de connexion.'; contactStatus.className = 'contact-status err'; }
       }
+      btn.disabled = false;
+      btn.textContent = 'Envoyer';
     });
+
+    initPage();
+    document.addEventListener('astro:after-swap', initPage);
   </script>
 
   <style>
-    .floating-rdv {
+    /* ── Floating buttons ── */
+    .floating-btns {
       position: fixed;
       bottom: 2rem;
       right: 2rem;
       z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: flex-end;
+    }
+
+    .floating-btn {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      background: var(--primary);
       color: #fff;
       border: none;
       cursor: pointer;
-      padding: 0.75rem 1.25rem;
+      padding: 0.7rem 1.15rem;
       border-radius: 999px;
       font-family: 'Author', serif;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 600;
-      box-shadow: 0 4px 20px rgba(28, 63, 110, 0.35);
-      transition: background 0.2s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: background 0.2s ease, transform 0.15s;
+      text-decoration: none;
     }
 
-    .floating-rdv:hover {
-      background: #152e52;
+    .floating-btn:hover { transform: translateY(-1px); }
+    .floating-btn .material-symbols-rounded { font-size: 1.1rem; }
+
+    .floating-contact {
+      background: var(--charcoal);
+    }
+    .floating-contact:hover { background: #333; }
+
+    .floating-rdv {
+      background: var(--primary);
+    }
+    .floating-rdv:hover { background: #152e52; }
+
+    /* ── Contact panel ── */
+    .contact-panel {
+      position: fixed;
+      bottom: 8rem;
+      right: 2rem;
+      z-index: 150;
+      width: 360px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+      overflow: hidden;
     }
 
-    .floating-rdv .material-symbols-rounded {
-      font-size: 1.1rem;
+    .contact-panel[hidden] { display: none; }
+
+    .contact-panel-inner {
+      padding: 1.5rem;
+      position: relative;
     }
+
+    .contact-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      color: var(--charcoal-light);
+      cursor: pointer;
+      padding: 0.2rem;
+      border-radius: 5px;
+      display: flex;
+      transition: color 0.2s;
+    }
+    .contact-close:hover { color: var(--primary); }
+    .contact-close .material-symbols-rounded { font-size: 1.1rem; }
+
+    .contact-input, .contact-textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.88rem;
+      font-family: 'Gambarino', Georgia, serif;
+      color: var(--charcoal);
+      outline: none;
+      margin-bottom: 0.5rem;
+      transition: border-color 0.2s;
+      background: var(--cream);
+    }
+
+    .contact-input:focus, .contact-textarea:focus {
+      border-color: var(--primary);
+      background: white;
+    }
+
+    .contact-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .contact-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .contact-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 0.25rem;
+    }
+
+    .contact-note {
+      font-size: 0.68rem;
+      color: var(--charcoal-light);
+      font-family: 'Author', serif;
+    }
+
+    .contact-send {
+      padding: 0.55rem 1.25rem;
+      font-size: 0.85rem;
+    }
+
+    .contact-status {
+      font-size: 0.78rem;
+      font-family: 'Author', serif;
+      font-weight: 600;
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+    .contact-status.ok { color: #166534; }
+    .contact-status.err { color: #b91c1c; }
 
     @media (max-width: 480px) {
-      .floating-rdv-label {
-        display: none;
+      .floating-label { display: none; }
+      .floating-btn { padding: 0.75rem; }
+      .floating-btn .material-symbols-rounded { font-size: 1.2rem; }
+      .floating-btns { bottom: 1.25rem; right: 1.25rem; }
+      .contact-panel {
+        right: 0.75rem;
+        left: 0.75rem;
+        bottom: 7rem;
+        width: auto;
       }
-      .floating-rdv {
-        padding: 0.85rem;
-      }
-      .floating-rdv .material-symbols-rounded {
-        font-size: 1.3rem;
-      }
+      .contact-row { flex-direction: column; gap: 0; }
     }
   </style>
 </body>

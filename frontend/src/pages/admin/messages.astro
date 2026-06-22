@@ -1,0 +1,133 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8056';
+
+// Purge auto des messages > 3 mois
+try { await fetch(new URL('/api/purge-messages', Astro.url.origin)); } catch {}
+
+let messages: any[] = [];
+
+try {
+  const res = await fetch(`${DIRECTUS_URL}/items/messages?sort=-date_created&limit=100`);
+  if (res.ok) messages = (await res.json()).data ?? [];
+} catch {}
+---
+
+<AdminLayout title="Messages — Administration" activePage="messages">
+
+  {messages.length > 0 ? (
+    <div class="msg-list">
+      {messages.map((m: any) => {
+        const d = new Date(m.date_created);
+        const date = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+        const time = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        const name = [m.firstname, m.lastname].filter(Boolean).join(' ');
+        return (
+          <div class="msg-card">
+            <div class="msg-head">
+              <div class="msg-from">
+                {name && <strong class="msg-name">{name}</strong>}
+                <a href={`mailto:${m.email}`} class="msg-email">{m.email}</a>
+                {m.phone && <span class="msg-phone">{m.phone}</span>}
+              </div>
+              <div class="msg-meta">
+                <span class="msg-date">{date}</span>
+                <span class="msg-time">{time}</span>
+              </div>
+            </div>
+            <p class="msg-body">{m.message}</p>
+            <div class="msg-footer">
+              {m.ip && <span class="msg-ip">{m.ip}</span>}
+              {m.fingerprint && <span class="msg-fp">{m.fingerprint}</span>}
+              <div class="msg-actions">
+                <button class="msg-block-email" data-val={m.email_normalized} title="Bloquer cet email">
+                  <span class="material-symbols-rounded">block</span> Email
+                </button>
+                {m.fingerprint && (
+                  <button class="msg-block-fp" data-val={m.fingerprint} title="Bloquer cet appareil">
+                    <span class="material-symbols-rounded">block</span> Appareil
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  ) : (
+    <p class="empty">Aucun message reçu</p>
+  )}
+
+</AdminLayout>
+
+<script>
+function initMsg() {
+  const DIRECTUS = document.querySelector('meta[name="directus-url"]')?.getAttribute('content') || 'http://localhost:8056';
+
+  async function block(value: string, type: string) {
+    if (!confirm(`Bloquer ${type === 'email' ? 'cet email' : type === 'ip' ? 'cette IP' : 'cet appareil'} ?`)) return;
+    // Get token from cookie
+    const token = document.cookie.split(';').find(c => c.trim().startsWith('directus_token='))?.split('=')?.[1] || '';
+    await fetch(`${DIRECTUS}/items/blacklist`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email_normalized: value, type }),
+    });
+    alert('Bloqué.');
+  }
+
+  document.querySelectorAll('.msg-block-email').forEach(b => b.addEventListener('click', () => block((b as HTMLElement).dataset.val!, 'email')));
+  document.querySelectorAll('.msg-block-fp').forEach(b => b.addEventListener('click', () => block((b as HTMLElement).dataset.val!, 'fingerprint')));
+}
+initMsg();
+document.addEventListener('astro:after-swap', initMsg);
+</script>
+
+<style>
+  .msg-list { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .msg-card { background: #faf8f2; border: 1px solid #eee; border-radius: 10px; padding: 1.25rem; }
+  :global(.dark) .msg-card { background: #1a1724; border-color: #2a2636; }
+
+  .msg-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.75rem; }
+
+  .msg-from { display: flex; flex-direction: column; gap: 0.15rem; }
+  .msg-name { font-family: 'Author', serif; font-size: 0.95rem; font-weight: 700; color: #1a1a2e; }
+  :global(.dark) .msg-name { color: #e0dde6; }
+  .msg-email { font-size: 0.82rem; color: #6D28D9; text-decoration: none; }
+  .msg-email:hover { text-decoration: underline; }
+  .msg-phone { font-size: 0.78rem; color: #888; }
+
+  .msg-meta { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+  .msg-date { font-size: 0.72rem; color: #6D28D9; font-family: 'Author', serif; font-weight: 600; }
+  .msg-time { font-size: 0.65rem; color: #999; }
+
+  .msg-body { font-size: 0.9rem; line-height: 1.7; color: #333; white-space: pre-wrap; }
+  :global(.dark) .msg-body { color: #ccc; }
+
+  .msg-footer { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #eee; flex-wrap: wrap; }
+  :global(.dark) .msg-footer { border-color: #2a2636; }
+
+  .msg-ip, .msg-fp { font-size: 0.62rem; color: #bbb; font-family: monospace; }
+
+  .msg-actions { display: flex; gap: 0.25rem; margin-left: auto; }
+
+  .msg-block-email, .msg-block-ip, .msg-block-fp {
+    display: flex; align-items: center; gap: 0.25rem;
+    background: none; border: 1px solid #eee; border-radius: 5px;
+    padding: 0.3rem 0.5rem; font-size: 0.65rem; font-family: 'Author', serif; font-weight: 600;
+    color: #999; cursor: pointer; transition: color 0.15s, border-color 0.15s;
+  }
+  .msg-block-email:hover, .msg-block-ip:hover, .msg-block-fp:hover { color: #dc2626; border-color: #dc2626; }
+  .msg-block-email .material-symbols-rounded, .msg-block-ip .material-symbols-rounded, .msg-block-fp .material-symbols-rounded { font-size: 0.85rem; }
+
+  .empty { text-align: center; padding: 3rem; color: #999; font-size: 0.95rem; }
+
+  @media (max-width: 480px) {
+    .msg-head { flex-direction: column; }
+    .msg-meta { align-items: flex-start; }
+    .msg-actions { margin-left: 0; }
+  }
+</style>

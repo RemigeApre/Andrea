@@ -1,0 +1,88 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Logs — Administration" activePage="administration">
+
+  <div class="logs-header">
+    <h2>Journal d'activité</h2>
+    <button type="button" class="adm-btn adm-btn-outline" id="clearLogs" title="Vider les logs">
+      <span class="material-symbols-rounded">delete_sweep</span> Vider
+    </button>
+  </div>
+
+  <div id="logsList"></div>
+
+</AdminLayout>
+
+<script>
+function initLogs() {
+  const list = document.getElementById('logsList')!;
+  const KEY = 'andrea_logs';
+
+  function load(): any[] {
+    try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; }
+  }
+
+  function render() {
+    const logs = load();
+    if (!logs.length) { list.innerHTML = '<p class="empty">Aucune activité enregistrée</p>'; return; }
+    list.innerHTML = logs.map(l => {
+      const d = new Date(l.date);
+      const date = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+      const time = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const iconMap: Record<string, string> = { login: 'login', copy: 'content_copy', export: 'download', export_all: 'file_download', note_add: 'add', note_edit: 'edit', note_delete: 'delete' };
+      const icon = iconMap[l.type] || 'info';
+      const typeLabel: Record<string, string> = { login: 'Connexion', copy: 'Copie note', export: 'Export note', export_all: 'Export total', note_add: 'Note ajoutée', note_edit: 'Note modifiée', note_delete: 'Note supprimée' };
+      return `<div class="log-row">
+        <span class="material-symbols-rounded log-icon">${icon}</span>
+        <div class="log-info">
+          <strong>${typeLabel[l.type] || l.type}</strong>
+          ${l.detail ? `<span class="log-detail">${l.detail}</span>` : ''}
+        </div>
+        <div class="log-meta">
+          <span class="log-date">${date}</span>
+          <span class="log-time">${time}</span>
+          ${l.ip ? `<span class="log-ip">${l.ip}</span>` : ''}
+          ${l.ua ? `<span class="log-ua">${l.ua}</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('clearLogs')?.addEventListener('click', () => {
+    if (confirm('Vider le journal ?')) { localStorage.setItem(KEY, '[]'); render(); }
+  });
+
+  render();
+}
+initLogs();
+document.addEventListener('astro:after-swap', initLogs);
+</script>
+
+<style>
+  .logs-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+  .logs-header h2 { font-family: 'Author', serif; font-size: 1.1rem; font-weight: 600; color: #1a1a2e; }
+  :global(.dark) .logs-header h2 { color: #e0dde6; }
+
+  :global(#logsList) { display: flex; flex-direction: column; border-top: 1px solid #eee; }
+  :global(.dark #logsList) { border-color: #2a2636; }
+  :global(.empty) { text-align: center; padding: 2rem; color: #999; font-size: 0.92rem; }
+
+  :global(.log-row) { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.85rem 0; border-bottom: 1px solid #eee; }
+  :global(.dark .log-row) { border-color: #2a2636; }
+
+  :global(.log-icon) { font-size: 1.1rem; color: #6D28D9; flex-shrink: 0; margin-top: 0.1rem; font-variation-settings: 'FILL' 0, 'wght' 500; }
+
+  :global(.log-info) { flex: 1; display: flex; flex-direction: column; gap: 0.15rem; }
+  :global(.log-info strong) { font-family: 'Author', serif; font-size: 0.85rem; font-weight: 600; color: #1a1a2e; }
+  :global(.dark .log-info strong) { color: #e0dde6; }
+  :global(.log-detail) { font-size: 0.78rem; color: #888; }
+
+  :global(.log-meta) { display: flex; flex-direction: column; align-items: flex-end; gap: 0.1rem; flex-shrink: 0; }
+  :global(.log-date) { font-size: 0.72rem; color: #6D28D9; font-family: 'Author', serif; font-weight: 600; }
+  :global(.log-time) { font-size: 0.68rem; color: #999; }
+  :global(.log-ip) { font-size: 0.62rem; color: #bbb; font-family: monospace; }
+  :global(.log-ua) { font-size: 0.55rem; color: #ccc; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>

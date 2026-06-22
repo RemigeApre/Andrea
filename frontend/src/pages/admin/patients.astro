@@ -1,0 +1,45 @@
+---
+export const prerender = false;
+
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Patients — Administration" activePage="patients">
+
+  <div class="patients-disabled">
+    <span class="material-symbols-rounded patients-disabled-icon">block</span>
+    <p>Du aux legislations francaises et europeennes, cette fonctionnalite est actuellement indisponible. Je regarde pour mettre cela en place dans le respect des lois.</p>
+  </div>
+
+</AdminLayout>
+
+<style>
+  .patients-disabled {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 50vh;
+    cursor: not-allowed;
+    user-select: none;
+  }
+
+  .patients-disabled-icon {
+    font-size: 3.5rem;
+    color: #1a1a2e;
+    margin-bottom: 1.5rem;
+    font-variation-settings: 'FILL' 1, 'wght' 600;
+  }
+
+  .patients-disabled p {
+    max-width: 440px;
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #1a1a2e;
+    font-family: 'Gambarino', Georgia, serif;
+  }
+
+  :global(.dark) .patients-disabled-icon { color: #e0dde6; }
+  :global(.dark) .patients-disabled p { color: #e0dde6; }
+</style>

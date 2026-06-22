@@ -1,8 +1,11 @@
 ---
+export const prerender = false;
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { fetchItems } from '../lib/directus';
 
 let faqItems: any[] = [];
+let tarif: any = null;
 
 try {
   faqItems = await fetchItems('faq', { sort: 'sort' });
@@ -10,10 +13,23 @@ try {
   faqItems = [];
 }
 
+try {
+  const tarifs = await fetchItems('tarifs', { limit: '1' });
+  if (tarifs.length > 0) tarif = tarifs[0];
+} catch {}
+
+const prix = tarif?.price_min ?? '60';
+const duree = tarif?.duration ?? '45';
+
 const defaultFaq = [
   {
-    question: "Combien coûte une séance de psychologie ?",
-    answer: "Une thérapie individuelle est au prix de 60\u00a0€.",
+    question: "Combien coûte une séance ?",
+    answer: `Une séance individuelle est au tarif de ${prix}\u00a0€.`,
+    link: null
+  },
+  {
+    question: "Combien de temps dure une séance ?",
+    answer: `Une séance dure ${duree} minutes. La fréquence est définie ensemble, en fonction de vos besoins.`,
     link: null
   },
   {
@@ -48,6 +64,16 @@ const questions = faqItems.length > 0
   description="Questions fréquentes sur les consultations de psychologie avec Andrea Simonet-Davin."
   activePage=""
 >
+
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": questions.map(q => ({
+      "@type": "Question",
+      "name": q.question,
+      "acceptedAnswer": { "@type": "Answer", "text": q.answer }
+    }))
+  })} />
 
   <!-- FAQ -->
   <section class="section">

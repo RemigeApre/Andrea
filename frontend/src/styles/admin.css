@@ -1,0 +1,380 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.adm {
+  min-height: 100vh;
+  background: white;
+  font-family: 'Gambarino', Georgia, serif;
+  color: #1a1a2e;
+}
+
+/* ── Header ── */
+.adm-header {
+  background: rgba(26, 22, 37, 0.97);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.adm-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 2.5rem;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.adm-back {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-family: 'Author', serif;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.adm-back:hover { color: rgba(255,255,255,0.85); }
+.adm-back .material-symbols-rounded { font-size: 1.1rem; }
+
+/* ── Nav — centré en absolu comme le header public ── */
+.adm-nav {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.adm-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-family: 'Gambarino', Georgia, serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  transition: color 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+
+.adm-nav-item:hover {
+  color: rgba(255,255,255,0.8);
+}
+
+.adm-nav-item.active {
+  color: white;
+  background: #6D28D9;
+}
+
+.adm-nav-icon {
+  font-size: 1.15rem;
+  font-variation-settings: 'FILL' 0;
+}
+
+.adm-nav-item.active .adm-nav-icon {
+  font-variation-settings: 'FILL' 1;
+}
+
+/* ── Logout ── */
+.adm-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+
+.adm-logout:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.adm-logout .material-symbols-rounded { font-size: 1.3rem; }
+
+/* ── Main ── */
+.adm-main {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem;
+}
+
+/* ── Shared admin components ── */
+.adm-page-title {
+  font-family: 'Author', serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 0.35rem;
+}
+
+.adm-page-desc {
+  font-size: 0.85rem;
+  color: #999;
+  margin-bottom: 2rem;
+}
+
+.adm-card {
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.adm-card-title {
+  font-family: 'Author', serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.adm-card-title .material-symbols-rounded {
+  font-size: 1.15rem;
+  color: #6D28D9;
+  font-variation-settings: 'FILL' 0;
+}
+
+.adm-label {
+  display: block;
+  font-size: 0.68rem;
+  font-family: 'Author', serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #999;
+  margin-bottom: 0.4rem;
+}
+
+.adm-input {
+  width: 100%;
+  border: 1px solid #e5e3ed;
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: 'Gambarino', Georgia, serif;
+  color: #1a1a2e;
+  outline: none;
+  transition: border-color 0.2s;
+  background: #faf8f2;
+}
+
+.adm-input:focus { border-color: #6D28D9; background: white; }
+
+.adm-input-sm {
+  max-width: 120px;
+}
+
+.adm-textarea {
+  width: 100%;
+  min-height: 120px;
+  border: 1px solid #e5e3ed;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  font-family: 'Gambarino', Georgia, serif;
+  color: #1a1a2e;
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.2s;
+  background: #faf8f2;
+}
+
+.adm-textarea:focus { border-color: #6D28D9; background: white; }
+
+.adm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #6D28D9;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.1rem;
+  font-family: 'Author', serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.adm-btn:hover { background: #5B21B6; }
+.adm-btn .material-symbols-rounded { font-size: 1rem; }
+
+.adm-btn-outline {
+  background: none;
+  color: #6D28D9;
+  border: 1px solid #6D28D9;
+}
+
+.adm-btn-outline:hover {
+  background: rgba(109, 40, 217, 0.06);
+}
+
+.adm-btn-danger {
+  background: none;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.adm-btn-danger:hover {
+  background: #fef2f2;
+}
+
+.adm-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.adm-alert .material-symbols-rounded { font-size: 1rem; }
+
+.adm-alert-success {
+  background: #f0fdf4;
+  border: 1px solid #86efac;
+  color: #166534;
+}
+
+.adm-alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.adm-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.adm-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.adm-empty {
+  text-align: center;
+  padding: 2rem;
+  color: #ccc;
+  font-size: 0.88rem;
+}
+
+/* ── Theme toggle ── */
+.adm-right {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.adm-theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.35);
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+
+.adm-theme-toggle:hover { color: rgba(255,255,255,0.8); }
+.adm-theme-toggle .material-symbols-rounded { font-size: 1.2rem; }
+
+/* ── Dark mode ── */
+.adm.dark {
+  background: #121016;
+  color: #e0dde6;
+}
+
+.adm.dark .adm-header {
+  background: rgba(12, 10, 18, 0.97);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.adm.dark .adm-main { color: #e0dde6; }
+
+.adm.dark .adm-card { background: #1a1724; border-color: #2a2636; }
+.adm.dark .adm-card-title { color: #e0dde6; }
+.adm.dark .adm-card-title .material-symbols-rounded { color: #8B5CF6; }
+
+.adm.dark .adm-page-title { color: #e0dde6; }
+.adm.dark .adm-page-desc { color: #666; }
+
+.adm.dark .adm-label { color: #777; }
+.adm.dark .adm-input {
+  background: #1a1724;
+  border-color: #2a2636;
+  color: #e0dde6;
+}
+.adm.dark .adm-input:focus { border-color: #6D28D9; background: #221e2e; }
+
+.adm.dark .adm-textarea {
+  background: #1a1724;
+  border-color: #2a2636;
+  color: #e0dde6;
+}
+.adm.dark .adm-textarea:focus { border-color: #6D28D9; background: #221e2e; }
+
+.adm.dark .adm-alert-success { background: #0a1f0f; border-color: #1a4a25; color: #86efac; }
+.adm.dark .adm-alert-error { background: #1f0a0a; border-color: #4a1a1a; color: #fca5a5; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .adm-nav {
+    position: static;
+    transform: none;
+  }
+  .adm-header-inner {
+    padding: 0 1.25rem;
+    gap: 0.5rem;
+  }
+  .adm-nav-label { display: none; }
+  .adm-nav-item { padding: 0.5rem 0.65rem; }
+}
+
+@media (max-width: 768px) {
+  .adm-header { position: static; }
+  .adm-header-inner { height: auto; flex-wrap: wrap; padding: 0.6rem 1rem; gap: 0; }
+  .adm-back { order: 1; }
+  .adm-back span:not(.material-symbols-rounded) { display: none; }
+  .adm-logout { order: 2; margin-left: auto; }
+  .adm-nav { order: 3; width: 100%; justify-content: space-around; gap: 0; padding-top: 0.4rem; border-top: 1px solid rgba(255,255,255,0.08); margin-top: 0.4rem; }
+  .adm-nav-item { flex-direction: column; gap: 0.15rem; padding: 0.4rem 0.5rem; font-size: 0.55rem; border-radius: 4px; }
+  .adm-nav-label { display: block; }
+  .adm-nav-icon { font-size: 1.15rem; }
+  .adm-main { padding: 1.5rem 1rem; }
+  .adm-row { flex-direction: column; align-items: stretch; }
+}

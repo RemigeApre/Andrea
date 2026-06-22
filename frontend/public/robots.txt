@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /patient
+Disallow: /connexion
+Disallow: /deconnexion
+
+Sitemap: https://simonet-davin.fr/sitemap.xml

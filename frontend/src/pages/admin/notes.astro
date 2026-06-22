@@ -1,0 +1,367 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+---
+
+<AdminLayout title="Notes — Administration" activePage="notes">
+
+  <!-- Filtres -->
+  <div class="filters">
+    <div class="search-wrap">
+      <span class="material-symbols-rounded">search</span>
+      <input type="text" id="searchInput" placeholder="Rechercher..." />
+    </div>
+    <select id="filterDate" class="filter-select">
+      <option value="all">Toutes</option>
+      <option value="today">Aujourd'hui</option>
+      <option value="week">Cette semaine</option>
+      <option value="month">Ce mois</option>
+    </select>
+    <label class="filter-check">
+      <input type="checkbox" id="filterImportant" />
+      <span class="material-symbols-rounded">star</span>
+    </label>
+    <button type="button" class="tool" id="btnExportAll" title="Exporter toutes les notes">
+      <span class="material-symbols-rounded">file_download</span>
+    </button>
+  </div>
+
+  <!-- Éditeur -->
+  <div class="notes-form" id="notesForm">
+    <input type="text" id="noteTitle" placeholder="Titre" />
+    <div id="noteBody" contenteditable="true" data-placeholder="Écrire..."></div>
+    <div class="notes-bar">
+      <button type="button" class="tool" id="toolBold" title="Gras (Ctrl+B)"><span class="material-symbols-rounded">format_bold</span></button>
+      <button type="button" class="tool" id="toolMark" title="Surligner"><span class="material-symbols-rounded">highlight</span></button>
+      <span class="storage-hint">
+        <span class="material-symbols-rounded">lock</span> Stockage local
+        <span class="storage-tip">Ces notes restent uniquement sur ce navigateur pour respecter les lois européennes. Les données de santé sont strictement encadrées par la loi. Je travaille sur une solution de stockage durable et conforme.</span>
+      </span>
+      <input type="hidden" id="editIdx" value="-1" />
+      <button type="button" class="adm-btn" id="btnSave"><span class="material-symbols-rounded">add</span> <span id="btnLabel">Ajouter</span></button>
+    </div>
+  </div>
+
+  <div id="notesList"></div>
+
+  <aside class="palette">
+    <div class="pal">
+      <div class="swatch" style="background:rgba(28,63,110,0.97)"></div>
+      <div>
+        <strong>藍染 Aizome</strong>
+        <span>#1C3F6E</span>
+        <p>Indigo japonais, VIIIe siècle. Artisans et samouraïs.</p>
+        <p class="pal-note">Transparence ajoutée pour le confort écran.</p>
+      </div>
+    </div>
+    <hr />
+    <div class="pal">
+      <div class="swatch" style="background:#6D28D9"></div>
+      <div>
+        <strong>江戸紫 Edo-murasaki</strong>
+        <span>#6D28D9</span>
+        <p>Violet noble d'Edo, cour impériale. Racine de gromwell.</p>
+      </div>
+    </div>
+  </aside>
+
+</AdminLayout>
+
+<script>
+function addLog(type: string, detail?: string) {
+  const KEY_LOG = 'andrea_logs';
+  const logs = JSON.parse(localStorage.getItem(KEY_LOG) || '[]');
+  const entry: any = { type, detail, date: new Date().toISOString(), ua: navigator.userAgent };
+  fetch('https://api.ipify.org?format=json').then(r => r.json()).then(d => {
+    entry.ip = d.ip; logs.unshift(entry); localStorage.setItem(KEY_LOG, JSON.stringify(logs.slice(0, 500)));
+  }).catch(() => { logs.unshift(entry); localStorage.setItem(KEY_LOG, JSON.stringify(logs.slice(0, 500))); });
+}
+
+function init() {
+  const titleEl = document.getElementById('noteTitle') as HTMLInputElement;
+  const bodyEl = document.getElementById('noteBody') as HTMLDivElement;
+  const listEl = document.getElementById('notesList')!;
+  const editIdx = document.getElementById('editIdx') as HTMLInputElement;
+  const btnLabel = document.getElementById('btnLabel')!;
+  const searchEl = document.getElementById('searchInput') as HTMLInputElement;
+  const filterDate = document.getElementById('filterDate') as HTMLSelectElement;
+  const filterImp = document.getElementById('filterImportant') as HTMLInputElement;
+
+  const KEY = 'andrea_notes';
+  type Note = { title: string; html: string; date: string; important?: boolean };
+
+  const load = (): Note[] => {
+    try {
+      const raw: any[] = JSON.parse(localStorage.getItem(KEY) || '[]');
+      return raw.map(n => ({ title: n.title || '', html: n.html || n.content || '', date: n.date || '', important: !!n.important }));
+    } catch { return []; }
+  };
+  const save = (n: Note[]) => localStorage.setItem(KEY, JSON.stringify(n));
+  const esc = (s: string) => s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const linkify = (h: string) => h.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+
+  function filterNotes(notes: Note[]): Note[] {
+    let out = notes;
+    const q = searchEl.value.trim().toLowerCase();
+    if (q) out = out.filter(n => (n.title + ' ' + n.html.replace(/<[^>]*>/g, '')).toLowerCase().includes(q));
+    const d = filterDate.value;
+    if (d !== 'all') {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (d === 'week') start.setDate(start.getDate() - start.getDay() + 1);
+      if (d === 'month') start.setDate(1);
+      out = out.filter(n => new Date(n.date) >= start);
+    }
+    if (filterImp.checked) out = out.filter(n => n.important);
+    return out;
+  }
+
+  function resetForm() {
+    titleEl.value = ''; bodyEl.innerHTML = ''; editIdx.value = '-1'; btnLabel.textContent = 'Ajouter';
+    (document.getElementById('btnSave')!.querySelector('.material-symbols-rounded') as HTMLElement).textContent = 'add';
+  }
+
+  function render() {
+    const all = load();
+    const notes = filterNotes(all);
+    if (!all.length) {
+      listEl.innerHTML = '<div class="welcome"><span class="material-symbols-rounded">edit_note</span><p>Vos notes apparaitront ici.</p></div>';
+      return;
+    }
+    if (!notes.length) {
+      listEl.innerHTML = '<p class="empty">Aucun résultat</p>';
+      return;
+    }
+    listEl.innerHTML = notes.map((n, _fi) => {
+      const ri = all.indexOf(n);
+      return `<div class="card${n.important ? ' card-imp' : ''}">
+        <span class="card-date">${new Date(n.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+        ${n.title ? `<h3 class="card-title">${esc(n.title)}</h3>` : ''}
+        <div class="card-body">${linkify(n.html)}</div>
+        <div class="card-actions">
+          <label class="card-star" title="Important"><input type="checkbox" data-star="${ri}" ${n.important ? 'checked' : ''} /><span class="material-symbols-rounded">star</span></label>
+          <button class="card-copy" data-copy="${ri}" title="Copier"><span class="material-symbols-rounded">content_copy</span></button>
+          <button class="card-export" data-export="${ri}" title="Exporter"><span class="material-symbols-rounded">download</span></button>
+          <button class="card-edit" data-edit="${ri}" title="Modifier"><span class="material-symbols-rounded">edit</span></button>
+          <button class="card-del" data-del="${ri}" title="Supprimer"><span class="material-symbols-rounded">delete</span></button>
+        </div>
+      </div>`;
+    }).join('');
+
+    listEl.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+      if (!confirm('Supprimer cette note ?')) return;
+      const i = +(b as HTMLElement).dataset.del!;
+      const n = load()[i];
+      addLog('note_delete', n.title || 'Sans titre');
+      const ns = load(); ns.splice(i, 1); save(ns); render();
+    }));
+    listEl.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => {
+      const i = +(b as HTMLElement).dataset.edit!;
+      const n = load()[i];
+      titleEl.value = n.title; bodyEl.innerHTML = n.html; editIdx.value = String(i);
+      btnLabel.textContent = 'Enregistrer';
+      (document.getElementById('btnSave')!.querySelector('.material-symbols-rounded') as HTMLElement).textContent = 'save';
+      titleEl.focus();
+    }));
+    listEl.querySelectorAll('[data-star]').forEach(cb => (cb as HTMLInputElement).addEventListener('change', () => {
+      const i = +(cb as HTMLInputElement).dataset.star!;
+      const ns = load(); ns[i].important = (cb as HTMLInputElement).checked; save(ns); render();
+    }));
+    listEl.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => {
+      const n = load()[+(b as HTMLElement).dataset.copy!];
+      const text = (n.title ? n.title + '\n\n' : '') + n.html.replace(/<[^>]*>/g, '');
+      navigator.clipboard.writeText(text);
+      addLog('copy', n.title || 'Sans titre');
+    }));
+    listEl.querySelectorAll('[data-export]').forEach(b => b.addEventListener('click', () => {
+      const n = load()[+(b as HTMLElement).dataset.export!];
+      const text = (n.title ? n.title + '\n\n' : '') + n.html.replace(/<[^>]*>/g, '') + '\n\n' + new Date(n.date).toLocaleString('fr-FR');
+      const blob = new Blob([text], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (n.title || 'note').replace(/[^a-zA-Z0-9àâéèêëïîôùûü -]/g, '') + '.txt';
+      a.click();
+      addLog('export', n.title || 'Sans titre');
+    }));
+  }
+
+  document.getElementById('toolBold')!.addEventListener('click', () => { document.execCommand('bold'); bodyEl.focus(); });
+  document.getElementById('toolMark')!.addEventListener('click', () => {
+    const s = window.getSelection();
+    if (s?.rangeCount && !s.isCollapsed) {
+      if (s.anchorNode?.parentElement?.tagName === 'MARK') {
+        const t = document.createTextNode(s.anchorNode.parentElement.textContent || '');
+        s.anchorNode.parentElement.replaceWith(t);
+      } else { document.execCommand('hiliteColor', false, '#FEF08A'); }
+    }
+    bodyEl.focus();
+  });
+
+  document.getElementById('btnSave')!.addEventListener('click', () => {
+    const html = bodyEl.innerHTML.trim();
+    if (!html || html === '<br>') return;
+    const ns = load();
+    const idx = parseInt(editIdx.value);
+    const t = titleEl.value.trim();
+    if (idx >= 0 && idx < ns.length) {
+      ns[idx].title = t;
+      ns[idx].html = html;
+      addLog('note_edit', t || 'Sans titre');
+    } else {
+      ns.unshift({ title: t, html, date: new Date().toISOString() });
+      addLog('note_add', t || 'Sans titre');
+    }
+    save(ns); resetForm(); render();
+  });
+
+  searchEl.addEventListener('input', render);
+  filterDate.addEventListener('change', render);
+  filterImp.addEventListener('change', render);
+
+  document.getElementById('btnExportAll')?.addEventListener('click', () => {
+    const notes = load();
+    if (!notes.length) return;
+    const text = notes.map(n => {
+      const date = new Date(n.date).toLocaleString('fr-FR');
+      const body = n.html.replace(/<[^>]*>/g, '');
+      return (n.title ? n.title + '\n' : '') + body + '\n(' + date + ')' + (n.important ? ' ★' : '');
+    }).join('\n\n---\n\n');
+    const blob = new Blob([text], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'notes_' + new Date().toISOString().slice(0, 10) + '.txt';
+    a.click();
+    addLog('export_all', notes.length + ' notes');
+  });
+
+  render();
+}
+init();
+document.addEventListener('astro:after-swap', init);
+</script>
+
+<style>
+  /* Filters */
+  .filters { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem; }
+  .search-wrap { display: flex; align-items: center; gap: 0.4rem; background: #faf8f2; border: 1px solid #eee; border-radius: 6px; padding: 0.45rem 0.7rem; flex: 1; }
+  .search-wrap .material-symbols-rounded { font-size: 1.1rem; color: #bbb; }
+  .search-wrap input { border: none; background: none; outline: none; font-family: 'Gambarino', Georgia, serif; font-size: 0.88rem; color: #1a1a2e; width: 100%; }
+  .filter-select { border: 1px solid #eee; background: #faf8f2; border-radius: 6px; padding: 0.45rem 0.6rem; font-family: 'Author', serif; font-size: 0.78rem; font-weight: 600; color: #333; outline: none; cursor: pointer; }
+  .filter-select:focus { border-color: #6D28D9; }
+  .filter-check { display: flex; align-items: center; cursor: pointer; padding: 0.4rem; border: 1px solid #eee; border-radius: 6px; background: #faf8f2; }
+  .filter-check input { display: none; }
+  .filter-check .material-symbols-rounded { font-size: 1.1rem; color: #ccc; font-variation-settings: 'FILL' 0; transition: color 0.15s; }
+  .filter-check:has(input:checked) .material-symbols-rounded { color: #6D28D9; font-variation-settings: 'FILL' 1; }
+
+  /* Form */
+  .notes-form { background: #faf8f2; border: 1px solid #eee; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; }
+  .notes-form input[type="text"] { width: 100%; border: none; background: none; font-family: 'Author', serif; font-size: 0.88rem; font-weight: 600; color: #1a1a2e; padding: 0 0 0.6rem; border-bottom: 1px solid #eee; outline: none; border-radius: 0; }
+  .notes-form input[type="text"]:focus { border-bottom-color: #6D28D9; }
+  .notes-form [contenteditable] { min-height: 64px; font-size: 0.88rem; font-family: 'Gambarino', Georgia, serif; line-height: 1.65; color: #1a1a2e; outline: none; padding: 0.5rem 0; border-bottom: 1px solid #eee; }
+  .notes-form [contenteditable]:empty::before { content: attr(data-placeholder); color: #bbb; pointer-events: none; }
+  .notes-form [contenteditable]:focus { border-bottom-color: #6D28D9; }
+
+  /* Bar */
+  .notes-bar { margin-top: 0.6rem; display: flex; align-items: center; gap: 0.5rem; }
+  .tool { background: none; border: 1px solid #e5e3ed; border-radius: 5px; padding: 0.3rem; cursor: pointer; display: flex; color: #666; }
+  .tool:hover { color: #6D28D9; background: rgba(109,40,217,0.06); border-color: #6D28D9; }
+  .tool .material-symbols-rounded { font-size: 1.05rem; }
+
+  /* Storage hint */
+  .storage-hint { position: relative; display: inline-flex; align-items: center; gap: 0.35rem; font-family: 'Author', serif; font-size: 0.72rem; font-weight: 600; color: #6D28D9; cursor: help; margin-left: auto; }
+  .storage-hint .material-symbols-rounded { font-size: 0.9rem; font-variation-settings: 'FILL' 1; }
+  .storage-tip { display: none; position: absolute; bottom: calc(100% + 0.5rem); right: 0; width: 300px; background: #1a1625; color: rgba(255,255,255,0.85); font-size: 0.8rem; font-family: 'Gambarino', Georgia, serif; font-weight: 400; line-height: 1.6; padding: 0.9rem; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 20; text-transform: none; letter-spacing: 0; }
+  .storage-hint:hover .storage-tip { display: block; }
+
+  /* Welcome */
+  :global(.welcome) { text-align: center; padding: 3rem 1rem; color: #ccc; }
+  :global(.welcome .material-symbols-rounded) { font-size: 2.5rem; display: block; margin-bottom: 0.75rem; font-variation-settings: 'FILL' 0, 'wght' 300; }
+  :global(.welcome p) { font-size: 0.92rem; }
+
+  /* Cards */
+  :global(#notesList) { display: flex; flex-direction: column; gap: 0.5rem; }
+  :global(.empty) { text-align: center; padding: 2rem; color: #999; font-size: 0.88rem; }
+  :global(.card) { background: #faf8f2; border: 1px solid #eee; border-radius: 10px; padding: 1.1rem 1.25rem; position: relative; }
+  :global(.card-imp) { background: #6D28D9; border-color: #6D28D9; }
+  :global(.card-imp .card-date) { color: rgba(255,255,255,0.6); }
+  :global(.card-imp .card-title) { color: white; }
+  :global(.card-imp .card-body) { color: rgba(255,255,255,0.9); }
+  :global(.card-imp .card-body a) { color: white; }
+  :global(.card-imp .card-edit) { color: white; }
+  :global(.card-imp .card-del) { color: rgba(255,255,255,0.6); }
+  :global(.card-imp .card-del:hover) { color: white; background: rgba(255,255,255,0.1); }
+  :global(.card-imp .card-star .material-symbols-rounded) { color: white; }
+  :global(.card-imp .card-edit:hover) { background: rgba(255,255,255,0.1); }
+  :global(.card-date) { position: absolute; top: 1rem; right: 1.25rem; font-size: 0.7rem; color: #6D28D9; font-family: 'Author', serif; font-weight: 600; }
+  :global(.card-title) { font-family: 'Author', serif; font-size: 0.92rem; font-weight: 700; color: #1a1a2e; margin: 0 0 0.3rem; padding-right: 6rem; }
+  :global(.card-body) { font-size: 0.85rem; line-height: 1.65; color: #333; }
+  :global(.card-body a) { color: #6D28D9; text-decoration: underline; text-underline-offset: 2px; word-break: break-all; }
+  :global(.card-body a:hover) { color: #5B21B6; }
+  :global(.card-body mark) { background: #FEF08A; padding: 0.05em 0.15em; border-radius: 2px; }
+
+  /* Card actions */
+  :global(.card-actions) { position: absolute; bottom: 0.6rem; right: 0.75rem; display: flex; align-items: center; gap: 0.1rem; opacity: 0; transition: opacity 0.15s; }
+  :global(.card:hover .card-actions) { opacity: 1; }
+  :global(.card-star) { display: flex; cursor: pointer; padding: 0.3rem; border-radius: 5px; }
+  :global(.card-star input) { display: none; }
+  :global(.card-star .material-symbols-rounded) { font-size: 1.1rem; color: #ccc; font-variation-settings: 'FILL' 0, 'wght' 500; transition: color 0.15s; }
+  :global(.card-star:has(input:checked) .material-symbols-rounded) { color: #6D28D9; font-variation-settings: 'FILL' 1; }
+  :global(.card-imp .card-star:has(input:checked) .material-symbols-rounded) { color: white; }
+  :global(.card-copy), :global(.card-export) { background: none; border: none; color: #999; cursor: pointer; padding: 0.3rem; border-radius: 5px; display: flex; }
+  :global(.card-copy:hover), :global(.card-export:hover) { color: #6D28D9; background: rgba(109,40,217,0.06); }
+  :global(.card-copy .material-symbols-rounded), :global(.card-export .material-symbols-rounded) { font-size: 1rem; font-variation-settings: 'FILL' 0, 'wght' 500; }
+  :global(.card-imp .card-copy), :global(.card-imp .card-export) { color: rgba(255,255,255,0.5); }
+  :global(.card-imp .card-copy:hover), :global(.card-imp .card-export:hover) { color: white; background: rgba(255,255,255,0.1); }
+  :global(.card-edit) { background: none; border: none; color: #1a1a2e; cursor: pointer; padding: 0.3rem; border-radius: 5px; display: flex; }
+  :global(.card-edit:hover) { background: rgba(0,0,0,0.04); }
+  :global(.card-edit .material-symbols-rounded) { font-size: 1.1rem; font-variation-settings: 'FILL' 0, 'wght' 600; }
+  :global(.card-del) { background: none; border: none; color: #dc2626; cursor: pointer; padding: 0.3rem; border-radius: 5px; display: flex; }
+  :global(.card-del:hover) { background: rgba(220,38,38,0.06); }
+  :global(.card-del .material-symbols-rounded) { font-size: 1.1rem; font-variation-settings: 'FILL' 0, 'wght' 600; }
+
+  @media (max-width: 768px) {
+    :global(.card-actions) { opacity: 1; position: static; margin-top: 0.75rem; justify-content: flex-end; }
+    :global(.card-star), :global(.card-edit), :global(.card-del) { padding: 0.4rem; }
+    :global(.card-star .material-symbols-rounded), :global(.card-edit .material-symbols-rounded), :global(.card-del .material-symbols-rounded) { font-size: 1.25rem; }
+    .filters { flex-wrap: wrap; }
+    .search-wrap { min-width: 100%; }
+  }
+
+  /* Palette */
+  .palette { position: fixed; right: 2rem; top: 50%; transform: translateY(-50%); width: 220px; background: #faf8f2; border: 1px solid #eee; border-radius: 10px; padding: 1.25rem; }
+  .pal { display: flex; gap: 0.7rem; align-items: flex-start; }
+  .swatch { width: 34px; height: 34px; border-radius: 6px; flex-shrink: 0; }
+  .pal strong { font-family: 'Author', serif; font-size: 0.82rem; color: #1a1a2e; display: block; }
+  .pal span { font-size: 0.7rem; color: #999; }
+  .pal p { font-size: 0.7rem; line-height: 1.45; color: #999; margin: 0.15rem 0 0; }
+  .pal-note { font-style: italic; color: #bbb !important; font-size: 0.62rem !important; }
+  .palette hr { border: none; height: 1px; background: #eee; margin: 0.75rem 0; }
+  /* Dark mode */
+  :global(.dark) .notes-form { background: #1a1724; border-color: #2a2636; }
+  :global(.dark) .notes-form input[type="text"] { color: #e0dde6; border-bottom-color: #2a2636; }
+  :global(.dark) .notes-form input[type="text"]:focus { border-bottom-color: #6D28D9; }
+  :global(.dark) .notes-form [contenteditable] { color: #e0dde6; border-bottom-color: #2a2636; }
+  :global(.dark) .notes-form [contenteditable]:focus { border-bottom-color: #6D28D9; }
+  :global(.dark) .notes-form [contenteditable]:empty::before { color: #555; }
+  :global(.dark) .tool { border-color: #2a2636; color: #888; }
+  :global(.dark) .tool:hover { color: #8B5CF6; border-color: #8B5CF6; background: rgba(139,92,246,0.1); }
+  :global(.dark) .search-wrap { background: #1a1724; border-color: #2a2636; }
+  :global(.dark) .search-wrap input { color: #e0dde6; }
+  :global(.dark) .filter-select { background: #1a1724; border-color: #2a2636; color: #e0dde6; }
+  :global(.dark) .filter-check { background: #1a1724; border-color: #2a2636; }
+  :global(.dark .card) { background: #1a1724; border-color: #2a2636; }
+  :global(.dark .card-imp) { background: #6D28D9; border-color: #6D28D9; }
+  :global(.dark .card-title) { color: #e0dde6; }
+  :global(.dark .card-body) { color: #bbb; }
+  :global(.dark .card-del) { color: #f87171; }
+  :global(.dark .card-edit) { color: #e0dde6; }
+  :global(.dark) .storage-tip { background: #0c0a12; }
+  :global(.dark) .palette { background: #1a1724; border-color: #2a2636; }
+  :global(.dark) .pal strong { color: #e0dde6; }
+  :global(.dark) .pal span { color: #666; }
+  :global(.dark) .pal p { color: #666; }
+  :global(.dark) .palette hr { background: #2a2636; }
+  :global(.dark .welcome) { color: #555; }
+
+  @media (max-width: 1200px) { .palette { display: none; } }
+</style>

@@ -1,0 +1,47 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Page introuvable — Andrea Simonet-Davin" description="Cette page n'existe pas." activePage="">
+  <section class="err">
+    <span class="err-code">404</span>
+    <p>Cette page n'existe pas ou a été déplacée.</p>
+    <a href="/" class="err-link">Retour à l'accueil</a>
+  </section>
+</BaseLayout>
+
+<style>
+  .err {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    text-align: center;
+    padding: 2rem;
+  }
+  .err-code {
+    font-family: 'Author', serif;
+    font-size: 5rem;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1;
+    opacity: 0.15;
+  }
+  .err p {
+    font-size: 1.05rem;
+    color: var(--charcoal);
+    margin: 1rem 0 1.5rem;
+  }
+  .err-link {
+    font-family: 'Author', serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+    border-bottom: 1px solid currentColor;
+    padding-bottom: 0.1rem;
+    transition: opacity 0.2s;
+  }
+  .err-link:hover { opacity: 0.65; }
+</style>

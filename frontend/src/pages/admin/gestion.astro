@@ -1,0 +1,333 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const DIRECTUS_URL = import.meta.env.DIRECTUS_URL || 'http://localhost:8056';
+const staleToken = Astro.cookies.get('directus_token')?.value ?? '';
+
+async function getToken(): Promise<string> {
+  const test = await fetch(`${DIRECTUS_URL}/users/me`, { headers: { Authorization: `Bearer ${staleToken}` } });
+  if (test.ok) return staleToken;
+  const r = await fetch(`${DIRECTUS_URL}/auth/refresh`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: Astro.cookies.get('directus_refresh')?.value ?? '', mode: 'json' }),
+  });
+  if (r.ok) {
+    const { data } = await r.json();
+    Astro.cookies.set('directus_token', data.access_token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 8 });
+    if (data.refresh_token) Astro.cookies.set('directus_refresh', data.refresh_token, { httpOnly: true, path: '/', maxAge: 60 * 60 * 24 * 7 });
+    return data.access_token;
+  }
+  return staleToken;
+}
+
+let price = '', duration = '', tarifId: string | null = null;
+let travaux: any[] = [];
+let error = '';
+
+try {
+  const res = await fetch(`${DIRECTUS_URL}/items/tarifs?limit=1`);
+  if (res.ok) { const item = (await res.json()).data?.[0]; if (item) { tarifId = item.id; price = String(item.price_min ?? ''); duration = String(item.duration ?? ''); } }
+} catch {}
+
+try {
+  const res = await fetch(`${DIRECTUS_URL}/items/travaux?sort=sort`);
+  if (res.ok) travaux = (await res.json()).data ?? [];
+} catch {}
+
+if (Astro.request.method === 'POST') {
+  try {
+    const token = await getToken();
+    const auth = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    const fd = await Astro.request.formData();
+    const action = fd.get('action');
+
+    if (action === 'tarif') {
+      const body: Record<string, number> = {};
+      const p = String(fd.get('price') ?? '').trim();
+      const d = String(fd.get('duration') ?? '').trim();
+      if (p) body.price_min = Number(p);
+      if (d) body.duration = Number(d);
+      if (tarifId) await fetch(`${DIRECTUS_URL}/items/tarifs/${tarifId}`, { method: 'PATCH', headers: auth, body: JSON.stringify(body) });
+      else await fetch(`${DIRECTUS_URL}/items/tarifs`, { method: 'POST', headers: auth, body: JSON.stringify({ ...body, label: 'par séance' }) });
+      return Astro.redirect('/admin/gestion?ok=1');
+    }
+    if (action === 'add-travail' || action === 'edit-travail') {
+      const type = String(fd.get('type') ?? '').trim();
+      const titre = String(fd.get('titre') ?? '').trim();
+      const url = String(fd.get('url') ?? '').trim() || null;
+      if (titre) {
+        const id = fd.get('id');
+        if (action === 'edit-travail' && id) await fetch(`${DIRECTUS_URL}/items/travaux/${id}`, { method: 'PATCH', headers: auth, body: JSON.stringify({ type, titre, url }) });
+        else await fetch(`${DIRECTUS_URL}/items/travaux`, { method: 'POST', headers: auth, body: JSON.stringify({ type, titre, url }) });
+      }
+      return Astro.redirect('/admin/gestion?ok=1');
+    }
+    if (action === 'delete-travail') {
+      await fetch(`${DIRECTUS_URL}/items/travaux/${fd.get('id')}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      return Astro.redirect('/admin/gestion');
+    }
+  } catch { error = 'Erreur de connexion.'; }
+}
+
+const ok = Astro.url.searchParams.get('ok');
+---
+
+<AdminLayout title="Gestion — Administration" activePage="gestion">
+
+  {error && <div class="adm-alert adm-alert-error"><span class="material-symbols-rounded">error</span> {error}</div>}
+
+  <!-- Consultation -->
+  <details class="section" open>
+    <summary class="section-banner">
+      <span>Consultation</span>
+      <span class="material-symbols-rounded banner-icon">payments</span>
+      <span class="hint" onclick="event.stopPropagation()">
+        <span class="material-symbols-rounded">info</span>
+        <span class="hint-tip">Tarif et durée uniques, appliqués à la visio et aux appels. Sur demande, cela peut être séparé par type de consultation.</span>
+      </span>
+      <span class="material-symbols-rounded chevron">expand_more</span>
+    </summary>
+    <div class="section-body">
+      <form method="POST">
+        <input type="hidden" name="action" value="tarif" />
+        <div class="row">
+          <div class="field">
+            <label>Prix (€)</label>
+            <input type="number" name="price" class="input input-sm" min="0" step="1" value={price} />
+          </div>
+          <div class="field">
+            <label>Durée (min)</label>
+            <input type="number" name="duration" class="input input-sm" min="0" step="1" value={duration} />
+          </div>
+          <div class="save-wrap">
+            <button type="submit" class="adm-btn"><span class="material-symbols-rounded">save</span> Enregistrer</button>
+            {ok && <span class="toast">Enregistré</span>}
+          </div>
+        </div>
+      </form>
+    </div>
+  </details>
+
+  <!-- Travaux -->
+  <details class="section" open>
+    <summary class="section-banner">
+      <span>Travaux</span>
+      <span class="material-symbols-rounded banner-icon">menu_book</span>
+      <span class="hint" onclick="event.stopPropagation()">
+        <span class="material-symbols-rounded">info</span>
+        <span class="hint-tip">Un blog pourrait être ajouté pour publier vos articles. Bon pour le référencement, mais demande de la rédaction de votre part.</span>
+      </span>
+      <span class="material-symbols-rounded chevron">expand_more</span>
+    </summary>
+    <div class="section-body">
+      {travaux.length > 0 && (
+        <div class="trav-list">
+          {travaux.map((t: any) => (
+            <div class="trav-row">
+              <span class="trav-badge">{t.type}</span>
+              <span class="trav-titre">{t.titre}</span>
+              {t.url && <a href={t.url} target="_blank" rel="noopener" class="trav-link"><span class="material-symbols-rounded">link</span></a>}
+              <div class="trav-actions">
+                <button type="button" class="trav-edit" data-edit={JSON.stringify(t)}><span class="material-symbols-rounded">edit</span></button>
+                <form method="POST" style="display:inline">
+                  <input type="hidden" name="action" value="delete-travail" />
+                  <input type="hidden" name="id" value={t.id} />
+                  <button type="submit" class="trav-del" onclick="return confirm('Supprimer ce travail ?')"><span class="material-symbols-rounded">delete</span></button>
+                </form>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      <button type="button" class="adm-btn" style="margin-top:0.75rem" id="btnAdd"><span class="material-symbols-rounded">add</span> Ajouter</button>
+    </div>
+  </details>
+
+  <!-- Modal -->
+  <div class="overlay" id="modal" hidden>
+    <div class="modal">
+      <button type="button" class="modal-x" id="modalX"><span class="material-symbols-rounded">close</span></button>
+      <form method="POST" id="modalForm">
+        <input type="hidden" name="action" id="mAction" value="add-travail" />
+        <input type="hidden" name="id" id="mId" />
+        <div class="modal-body">
+          <select name="type" id="mType" class="input" style="max-width:150px">
+            <option value="Article">Article</option>
+            <option value="Mémoire">Mémoire</option>
+            <option value="Autre">Autre</option>
+          </select>
+          <div>
+            <label>Titre</label>
+            <textarea name="titre" id="mTitre" class="textarea" rows="3" required placeholder="Titre du travail"></textarea>
+          </div>
+          <div class="disabled-field">
+            <label>Description</label>
+            <textarea class="textarea" rows="2" disabled placeholder="Bientôt disponible"></textarea>
+          </div>
+          <div>
+            <label>Lien (optionnel)</label>
+            <input type="url" name="url" id="mUrl" class="input" placeholder="https://..." />
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="adm-btn adm-btn-outline" id="modalCancel">Annuler</button>
+          <button type="submit" class="adm-btn" id="modalOk">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</AdminLayout>
+
+<script>
+function initGestion() {
+  const modal = document.getElementById('modal')!;
+  const open = () => modal.hidden = false;
+  const close = () => modal.hidden = true;
+
+  document.getElementById('modalX')?.addEventListener('click', close);
+  document.getElementById('modalCancel')?.addEventListener('click', close);
+  modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+  document.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => {
+    const t = JSON.parse((b as HTMLElement).dataset.edit!);
+    (document.getElementById('mAction') as HTMLInputElement).value = 'edit-travail';
+    (document.getElementById('mId') as HTMLInputElement).value = t.id;
+    (document.getElementById('mType') as HTMLSelectElement).value = t.type;
+    (document.getElementById('mTitre') as HTMLTextAreaElement).value = t.titre;
+    (document.getElementById('mUrl') as HTMLInputElement).value = t.url || '';
+    document.getElementById('modalOk')!.textContent = 'Enregistrer';
+    open();
+  }));
+
+  document.getElementById('btnAdd')?.addEventListener('click', () => {
+    (document.getElementById('mAction') as HTMLInputElement).value = 'add-travail';
+    (document.getElementById('mId') as HTMLInputElement).value = '';
+    (document.getElementById('mType') as HTMLSelectElement).value = 'Article';
+    (document.getElementById('mTitre') as HTMLTextAreaElement).value = '';
+    (document.getElementById('mUrl') as HTMLInputElement).value = '';
+    document.getElementById('modalOk')!.textContent = 'Ajouter';
+    open();
+  });
+
+  // Toggle animation
+  document.querySelectorAll<HTMLDetailsElement>('.section').forEach(d => {
+    const s = d.querySelector('summary')!;
+    const b = d.querySelector('.section-body') as HTMLElement;
+    if (!b) return;
+    s.addEventListener('click', e => {
+      e.preventDefault();
+      if (d.open) {
+        b.style.maxHeight = b.scrollHeight + 'px';
+        b.offsetHeight;
+        b.style.maxHeight = '0';
+        b.style.opacity = '0';
+        b.addEventListener('transitionend', () => { d.open = false; b.style.maxHeight = ''; b.style.opacity = ''; }, { once: true });
+      } else {
+        d.open = true;
+        const h = b.scrollHeight;
+        b.style.maxHeight = '0'; b.style.opacity = '0';
+        b.offsetHeight;
+        b.style.maxHeight = h + 'px'; b.style.opacity = '1';
+        b.addEventListener('transitionend', () => { b.style.maxHeight = ''; }, { once: true });
+      }
+    });
+  });
+}
+initGestion();
+document.addEventListener('astro:after-swap', initGestion);
+</script>
+
+<style>
+  /* Sections */
+  .section { background: #faf8f2; border: 1px solid #eee; border-radius: 10px; margin-bottom: 1rem; }
+  .section-banner { display: flex; align-items: center; gap: 0.6rem; background: #6D28D9; padding: 0.75rem 1.25rem; cursor: pointer; list-style: none; user-select: none; border-radius: 9px 9px 0 0; }
+  .section:not([open]) .section-banner { border-radius: 9px; }
+  .section-banner::-webkit-details-marker { display: none; }
+  .section-banner span:first-child { font-family: 'Author', serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: white; }
+  .banner-icon { font-size: 1.1rem; color: rgba(255,255,255,0.5); font-variation-settings: 'FILL' 1, 'wght' 600; }
+  .chevron { font-size: 1.2rem; color: rgba(255,255,255,0.5); transition: transform 0.25s; }
+  .section[open] .chevron { transform: rotate(180deg); }
+  .section-body { padding: 1.25rem 1.5rem; overflow: hidden; transition: max-height 0.3s ease, opacity 0.25s ease; }
+
+  /* Form elements */
+  .row { display: flex; align-items: flex-end; gap: 0.75rem; }
+  .field { display: flex; flex-direction: column; }
+  label { font-size: 0.68rem; font-family: 'Author', serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #999; margin-bottom: 0.4rem; }
+  .input { border: 1px solid #e5e3ed; border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: 'Gambarino', Georgia, serif; color: #1a1a2e; outline: none; background: white; transition: border-color 0.2s; }
+  .input:focus { border-color: #6D28D9; }
+  .input-sm { max-width: 110px; }
+  .textarea { width: 100%; min-height: 80px; border: 1px solid #e5e3ed; border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: 'Gambarino', Georgia, serif; color: #1a1a2e; outline: none; resize: vertical; background: white; transition: border-color 0.2s; }
+  .textarea:focus { border-color: #6D28D9; }
+
+  /* Toast */
+  .save-wrap { position: relative; }
+  .toast { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 0.5rem; background: #166534; color: white; font-size: 0.72rem; font-family: 'Author', serif; font-weight: 600; padding: 0.35rem 0.75rem; border-radius: 5px; white-space: nowrap; animation: pop 4s ease forwards; pointer-events: none; }
+  @keyframes pop { 0% { opacity: 0; transform: translateX(-50%) translateY(4px); } 8% { opacity: 1; transform: translateX(-50%) translateY(0); } 75% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(4px); } }
+
+  /* Hint */
+  .hint { position: relative; display: inline-flex; cursor: help; margin-left: auto; }
+  .hint .material-symbols-rounded { font-size: 1rem; color: rgba(255,255,255,0.35); transition: color 0.2s; }
+  .hint:hover .material-symbols-rounded { color: rgba(255,255,255,0.9); }
+  .hint-tip { display: none; position: absolute; top: calc(100% + 0.6rem); right: 0; width: 280px; background: #1a1625; color: rgba(255,255,255,0.85); font-size: 0.8rem; font-family: 'Gambarino', Georgia, serif; font-weight: 400; line-height: 1.6; padding: 0.85rem 1rem; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 20; text-transform: none; letter-spacing: 0; }
+  .hint:hover .hint-tip { display: block; }
+
+  /* Travaux */
+  .trav-list { border-top: 1px solid #eee; }
+  .trav-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 0; border-bottom: 1px solid #eee; }
+  .trav-row:hover { background: rgba(109,40,217,0.02); margin: 0 -0.5rem; padding-left: 0.5rem; padding-right: 0.5rem; border-radius: 6px; }
+  .trav-badge { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: white; font-family: 'Author', serif; font-weight: 700; background: #6D28D9; padding: 0.2rem 0.5rem; border-radius: 3px; flex-shrink: 0; }
+  .trav-titre { flex: 1; font-size: 0.88rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .trav-link { color: #6D28D9; display: flex; flex-shrink: 0; opacity: 0.4; }
+  .trav-link:hover { opacity: 1; }
+  .trav-link .material-symbols-rounded { font-size: 0.95rem; }
+  .trav-actions { display: flex; gap: 0.15rem; flex-shrink: 0; }
+  .trav-edit, .trav-del { background: none; border: none; cursor: pointer; padding: 0.35rem; display: flex; border-radius: 6px; }
+  .trav-edit { color: #1a1a2e; }
+  .trav-edit:hover { background: rgba(0,0,0,0.05); }
+  .trav-del { color: #dc2626; }
+  .trav-del:hover { background: rgba(220,38,38,0.06); }
+  .trav-edit .material-symbols-rounded, .trav-del .material-symbols-rounded { font-size: 1.1rem; font-variation-settings: 'FILL' 0, 'wght' 600; }
+
+  /* Modal */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); z-index: 500; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+  .overlay[hidden] { display: none; }
+  .modal { background: white; border-radius: 14px; width: 100%; max-width: 440px; box-shadow: 0 16px 48px rgba(0,0,0,0.2); position: relative; }
+  .modal-x { position: absolute; top: 0.85rem; right: 0.85rem; background: none; border: none; color: #6D28D9; cursor: pointer; padding: 0.3rem; display: flex; border-radius: 6px; z-index: 1; }
+  .modal-x:hover { background: rgba(109,40,217,0.08); }
+  .modal-x .material-symbols-rounded { font-size: 1.15rem; }
+  .modal-body { padding: 1.75rem 1.5rem 1rem; display: flex; flex-direction: column; gap: 1rem; }
+  .disabled-field { opacity: 0.3; pointer-events: none; }
+  .disabled-field .textarea { min-height: 50px; background: #f5f5f5; }
+  .modal-foot { padding: 1rem 1.5rem; border-top: 1px solid #f0f0f0; display: flex; justify-content: center; gap: 0.5rem; }
+
+  /* Dark mode */
+  :global(.dark) .section { background: #1a1724; border-color: #2a2636; }
+  :global(.dark) .section-body { color: #e0dde6; }
+  :global(.dark) label { color: #777; }
+  :global(.dark) .input, :global(.dark) .textarea { background: #121016; border-color: #2a2636; color: #e0dde6; }
+  :global(.dark) .input:focus, :global(.dark) .textarea:focus { border-color: #6D28D9; background: #1a1724; }
+  :global(.dark) .trav-list { border-color: #2a2636; }
+  :global(.dark) .trav-row { border-color: #2a2636; }
+  :global(.dark) .trav-row:hover { background: rgba(109,40,217,0.06); }
+  :global(.dark) .trav-titre { color: #ccc; }
+  :global(.dark) .trav-edit { color: #e0dde6; }
+  :global(.dark) .modal { background: #1a1724; }
+  :global(.dark) .modal-foot { border-color: #2a2636; }
+  :global(.dark) .disabled-field .textarea { background: #121016; }
+  :global(.dark) .hint-tip { background: #0c0a12; }
+  :global(.dark) .adm-btn-outline { color: #8B5CF6; border-color: #8B5CF6; }
+  :global(.dark) .adm-btn-outline:hover { background: rgba(139,92,246,0.1); }
+
+  @media (max-width: 768px) {
+    .row { flex-direction: column; align-items: stretch; }
+    .input-sm { max-width: 100%; }
+    .overlay { padding: 0.75rem; }
+    .modal { max-width: 100%; border-radius: 10px; }
+    .modal-body { padding: 1.25rem 1rem 0.75rem; }
+    .modal-foot { padding: 0.75rem 1rem; }
+    .trav-actions { gap: 0; }
+    .trav-edit, .trav-del { padding: 0.45rem; }
+  }
+</style>
