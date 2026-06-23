@@ -1,0 +1,157 @@
+---
+export const prerender = false;
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { fetchItems } from '../../lib/directus';
+
+let articles: any[] = [];
+
+try {
+  articles = await fetchItems('articles', { sort: '-date_published', 'filter[status][_eq]': 'published' });
+} catch {}
+---
+
+<BaseLayout
+  title="Articles — Andrea Simonet-Davin, Psychologue"
+  description="Articles et réflexions d'Andrea Simonet-Davin, psychologue. Stress, anxiété, bien-être, accompagnement psychologique."
+  activePage="articles"
+>
+
+  <section class="section">
+    <div class="container">
+      {articles.length > 0 ? (
+        <div class="articles-grid">
+          {articles.map((a: any) => {
+            const date = a.date_published ? new Date(a.date_published).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+            const slug = a.slug || a.id;
+            return (
+              <a href={`/articles/${slug}`} class="article-card">
+                <div class="article-card-top">
+                  {a.category && <span class="article-cat">{a.category}</span>}
+                  {date && <span class="article-date">{date}</span>}
+                </div>
+                <h2 class="article-title">{a.title}</h2>
+                {a.excerpt && <p class="article-excerpt">{a.excerpt}</p>}
+                <span class="article-read">Lire l'article <span class="material-symbols-rounded">arrow_forward</span></span>
+              </a>
+            );
+          })}
+        </div>
+      ) : (
+        <div class="articles-empty">
+          <span class="material-symbols-rounded">article</span>
+          <p>Les articles arrivent bientôt.</p>
+        </div>
+      )}
+    </div>
+  </section>
+
+</BaseLayout>
+
+<style>
+  .articles-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    max-width: 900px;
+    margin-inline: auto;
+  }
+
+  @media (max-width: 640px) {
+    .articles-grid { grid-template-columns: 1fr; }
+  }
+
+  .article-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .article-card:hover {
+    border-color: var(--primary);
+    box-shadow: 0 4px 20px rgba(28, 63, 110, 0.08);
+  }
+
+  .article-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .article-cat {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: white;
+    font-family: 'Author', serif;
+    font-weight: 700;
+    background: var(--primary);
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+  }
+
+  .article-date {
+    font-size: 0.72rem;
+    color: var(--charcoal-light);
+    font-family: 'Author', serif;
+  }
+
+  .article-title {
+    font-family: 'Author', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--charcoal);
+    line-height: 1.35;
+    margin: 0;
+  }
+
+  .article-excerpt {
+    font-size: 0.85rem;
+    color: var(--charcoal-light);
+    line-height: 1.6;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .article-read {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: 'Author', serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--primary);
+    margin-top: auto;
+  }
+
+  .article-read .material-symbols-rounded { font-size: 0.9rem; }
+
+  .articles-empty {
+    text-align: center;
+    padding: 4rem 1rem;
+    color: var(--charcoal-light);
+  }
+
+  .articles-empty .material-symbols-rounded {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 1rem;
+    opacity: 0.2;
+    font-variation-settings: 'FILL' 0, 'wght' 300;
+  }
+
+  .articles-empty p {
+    font-size: 1rem;
+    color: var(--charcoal-light);
+  }
+</style>

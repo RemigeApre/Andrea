@@ -1,0 +1,221 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+
+const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8056';
+const token = process.env.DIRECTUS_STATIC_TOKEN || '';
+
+let articles: any[] = [];
+
+try {
+  const res = await fetch(`${DIRECTUS_URL}/items/articles?sort=-date_created`, { headers: { Authorization: `Bearer ${token}` } });
+  if (res.ok) articles = (await res.json()).data ?? [];
+} catch {}
+
+if (Astro.request.method === 'POST') {
+  try {
+    const auth = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+    const fd = await Astro.request.formData();
+    const action = fd.get('action');
+
+    if (action === 'create' || action === 'edit') {
+      const title = String(fd.get('title') ?? '').trim();
+      const slug = String(fd.get('slug') ?? '').trim() || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const excerpt = String(fd.get('excerpt') ?? '').trim() || null;
+      const category = String(fd.get('category') ?? '').trim() || null;
+      const body = String(fd.get('body') ?? '').trim();
+      const status = fd.get('status') || 'draft';
+      const date_published = status === 'published' ? new Date().toISOString() : null;
+
+      if (title && body) {
+        const id = fd.get('id');
+        const data: any = { title, slug, excerpt, category, body, status };
+        if (action === 'create') data.date_published = date_published;
+        if (action === 'edit' && id) {
+          // Si on publie pour la première fois
+          if (status === 'published') {
+            const existing = articles.find(a => String(a.id) === String(id));
+            if (existing && !existing.date_published) data.date_published = new Date().toISOString();
+          }
+          await fetch(`${DIRECTUS_URL}/items/articles/${id}`, { method: 'PATCH', headers: auth, body: JSON.stringify(data) });
+        } else {
+          await fetch(`${DIRECTUS_URL}/items/articles`, { method: 'POST', headers: auth, body: JSON.stringify(data) });
+        }
+      }
+      return Astro.redirect('/admin/articles?ok=1');
+    }
+
+    if (action === 'delete') {
+      await fetch(`${DIRECTUS_URL}/items/articles/${fd.get('id')}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+      return Astro.redirect('/admin/articles');
+    }
+  } catch {}
+}
+
+const ok = Astro.url.searchParams.get('ok');
+const editId = Astro.url.searchParams.get('edit');
+const editing = editId ? articles.find(a => String(a.id) === editId) : null;
+---
+
+<AdminLayout title="Articles — Administration" activePage="articles">
+
+  {ok && <div class="adm-alert adm-alert-success" style="animation:pop 4s ease forwards"><span class="material-symbols-rounded">check_circle</span> Enregistré.</div>}
+
+  <!-- Éditeur -->
+  <details class="section" open={!!editing}>
+    <summary class="section-banner">
+      <span>{editing ? 'Modifier l\'article' : 'Nouvel article'}</span>
+      <span class="material-symbols-rounded banner-icon">edit_note</span>
+      <span class="material-symbols-rounded chevron">expand_more</span>
+    </summary>
+    <div class="section-body">
+      <form method="POST" class="editor-form">
+        <input type="hidden" name="action" value={editing ? 'edit' : 'create'} />
+        {editing && <input type="hidden" name="id" value={editing.id} />}
+
+        <div class="editor-row">
+          <div class="editor-field" style="flex:2">
+            <label>Titre</label>
+            <input type="text" name="title" class="input" required value={editing?.title || ''} placeholder="Titre de l'article" />
+          </div>
+          <div class="editor-field" style="flex:1">
+            <label>Slug (URL)</label>
+            <input type="text" name="slug" class="input" value={editing?.slug || ''} placeholder="auto-généré" />
+          </div>
+        </div>
+
+        <div class="editor-row">
+          <div class="editor-field" style="flex:1">
+            <label>Catégorie</label>
+            <input type="text" name="category" class="input" value={editing?.category || ''} placeholder="Bien-être, Anxiété, etc." />
+          </div>
+          <div class="editor-field" style="flex:1">
+            <label>Statut</label>
+            <select name="status" class="input">
+              <option value="draft" selected={!editing || editing?.status === 'draft'}>Brouillon</option>
+              <option value="published" selected={editing?.status === 'published'}>Publié</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="editor-field">
+          <label>Résumé (affiché dans la liste)</label>
+          <textarea name="excerpt" class="textarea" rows="2" placeholder="Courte description">{editing?.excerpt || ''}</textarea>
+        </div>
+
+        <div class="editor-field">
+          <label>Contenu (HTML)</label>
+          <textarea name="body" class="textarea editor-body" rows="15" required placeholder="Écrivez votre article ici. Le HTML est supporté : <h2>, <p>, <strong>, <blockquote>, <ul>, <li>, etc.">{editing?.body || ''}</textarea>
+        </div>
+
+        <div class="editor-actions">
+          {editing && <a href="/admin/articles" class="adm-btn adm-btn-outline">Annuler</a>}
+          <button type="submit" class="adm-btn"><span class="material-symbols-rounded">save</span> {editing ? 'Enregistrer' : 'Créer'}</button>
+        </div>
+      </form>
+    </div>
+  </details>
+
+  <!-- Liste -->
+  <details class="section" open>
+    <summary class="section-banner">
+      <span>Articles ({articles.length})</span>
+      <span class="material-symbols-rounded banner-icon">list</span>
+      <span class="material-symbols-rounded chevron">expand_more</span>
+    </summary>
+    <div class="section-body">
+      {articles.length > 0 ? (
+        <div class="art-list">
+          {articles.map((a: any) => {
+            const date = a.date_published ? new Date(a.date_published).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
+            return (
+              <div class="art-row">
+                <span class={`art-status ${a.status === 'published' ? 'art-pub' : 'art-draft'}`}>{a.status === 'published' ? 'Publié' : 'Brouillon'}</span>
+                <span class="art-title">{a.title}</span>
+                {a.category && <span class="art-cat">{a.category}</span>}
+                {date && <span class="art-date">{date}</span>}
+                <div class="art-actions">
+                  {a.status === 'published' && <a href={`/articles/${a.slug || a.id}`} target="_blank" class="art-view" title="Voir"><span class="material-symbols-rounded">open_in_new</span></a>}
+                  <a href={`/admin/articles?edit=${a.id}`} class="art-edit" title="Modifier"><span class="material-symbols-rounded">edit</span></a>
+                  <form method="POST" style="display:inline">
+                    <input type="hidden" name="action" value="delete" />
+                    <input type="hidden" name="id" value={a.id} />
+                    <button type="submit" class="art-del" onclick="return confirm('Supprimer cet article ?')"><span class="material-symbols-rounded">delete</span></button>
+                  </form>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p class="empty">Aucun article</p>
+      )}
+    </div>
+  </details>
+
+</AdminLayout>
+
+<style>
+  .section { background: #faf8f2; border: 1px solid #eee; border-radius: 10px; margin-bottom: 1rem; }
+  .section-banner { display: flex; align-items: center; gap: 0.6rem; background: #6D28D9; padding: 0.75rem 1.25rem; cursor: pointer; list-style: none; user-select: none; border-radius: 9px 9px 0 0; }
+  .section:not([open]) .section-banner { border-radius: 9px; }
+  .section-banner::-webkit-details-marker { display: none; }
+  .section-banner span:first-child { font-family: 'Author', serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: white; }
+  .banner-icon { font-size: 1.1rem; color: rgba(255,255,255,0.5); font-variation-settings: 'FILL' 1, 'wght' 600; }
+  .chevron { font-size: 1.2rem; color: rgba(255,255,255,0.5); transition: transform 0.25s; margin-left: auto; }
+  .section[open] .chevron { transform: rotate(180deg); }
+  .section-body { padding: 1.25rem 1.5rem; }
+
+  /* Editor */
+  .editor-form { display: flex; flex-direction: column; gap: 1rem; }
+  .editor-row { display: flex; gap: 0.75rem; }
+  .editor-field { display: flex; flex-direction: column; }
+  .editor-field label { font-size: 0.68rem; font-family: 'Author', serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #999; margin-bottom: 0.4rem; }
+  .input { border: 1px solid #e5e3ed; border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: 'Gambarino', Georgia, serif; color: #1a1a2e; outline: none; background: white; transition: border-color 0.2s; width: 100%; }
+  .input:focus { border-color: #6D28D9; }
+  .textarea { width: 100%; border: 1px solid #e5e3ed; border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: 'Gambarino', Georgia, serif; color: #1a1a2e; outline: none; resize: vertical; background: white; transition: border-color 0.2s; }
+  .textarea:focus { border-color: #6D28D9; }
+  .editor-body { min-height: 300px; font-family: monospace; font-size: 0.85rem; line-height: 1.6; }
+  .editor-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+
+  /* List */
+  .art-list { border-top: 1px solid #eee; }
+  .art-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 0; border-bottom: 1px solid #eee; }
+  .art-row:hover { background: rgba(109,40,217,0.02); margin: 0 -0.5rem; padding-left: 0.5rem; padding-right: 0.5rem; border-radius: 6px; }
+
+  .art-status { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; font-family: 'Author', serif; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 3px; flex-shrink: 0; }
+  .art-pub { background: #166534; color: white; }
+  .art-draft { background: #eee; color: #888; }
+
+  .art-title { flex: 1; font-size: 0.88rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .art-cat { font-size: 0.7rem; color: #999; flex-shrink: 0; }
+  .art-date { font-size: 0.7rem; color: #6D28D9; font-family: 'Author', serif; font-weight: 600; flex-shrink: 0; }
+
+  .art-actions { display: flex; gap: 0.15rem; flex-shrink: 0; }
+  .art-view, .art-edit, .art-del { background: none; border: none; cursor: pointer; padding: 0.35rem; display: flex; border-radius: 6px; text-decoration: none; }
+  .art-view { color: #999; }
+  .art-view:hover { color: #6D28D9; background: rgba(109,40,217,0.06); }
+  .art-edit { color: #1a1a2e; }
+  .art-edit:hover { background: rgba(0,0,0,0.05); }
+  .art-del { color: #dc2626; }
+  .art-del:hover { background: rgba(220,38,38,0.06); }
+  .art-view .material-symbols-rounded, .art-edit .material-symbols-rounded, .art-del .material-symbols-rounded { font-size: 1.1rem; font-variation-settings: 'FILL' 0, 'wght' 600; }
+
+  .empty { text-align: center; padding: 2rem; color: #999; font-size: 0.92rem; }
+
+  @media (max-width: 768px) {
+    .editor-row { flex-direction: column; }
+    .art-cat, .art-date { display: none; }
+  }
+
+  /* Dark */
+  :global(.dark) .section { background: #1a1724; border-color: #2a2636; }
+  :global(.dark) .section-body { color: #e0dde6; }
+  :global(.dark) .editor-field label { color: #777; }
+  :global(.dark) .input, :global(.dark) .textarea { background: #121016; border-color: #2a2636; color: #e0dde6; }
+  :global(.dark) .input:focus, :global(.dark) .textarea:focus { border-color: #6D28D9; }
+  :global(.dark) .art-list { border-color: #2a2636; }
+  :global(.dark) .art-row { border-color: #2a2636; }
+  :global(.dark) .art-title { color: #ccc; }
+  :global(.dark) .art-edit { color: #e0dde6; }
+</style>
