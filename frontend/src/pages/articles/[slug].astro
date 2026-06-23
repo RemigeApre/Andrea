@@ -41,7 +41,7 @@ const date = article.date_published ? new Date(article.date_published).toLocaleD
           Articles
         </a>
         <div class="article-meta">
-          {article.category && <span class="article-cat">{article.category}</span>}
+          {article.tags && <span class="article-cat">{article.tags.split(',')[0].trim()}</span>}
           {date && <span class="article-date">{date}</span>}
         </div>
         <h1>{article.title}</h1>

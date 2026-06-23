@@ -27,7 +27,7 @@ try {
             return (
               <a href={`/articles/${slug}`} class="article-card">
                 <div class="article-card-top">
-                  {a.category && <span class="article-cat">{a.category}</span>}
+                  {a.tags && <span class="article-cat">{a.tags.split(',')[0].trim()}</span>}
                   {date && <span class="article-date">{date}</span>}
                 </div>
                 <h2 class="article-title">{a.title}</h2>

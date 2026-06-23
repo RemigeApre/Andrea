@@ -6,10 +6,15 @@ const DIRECTUS_URL = process.env.DIRECTUS_URL || 'http://localhost:8056';
 const token = process.env.DIRECTUS_STATIC_TOKEN || '';
 
 let articles: any[] = [];
+let allTags: string[] = [];
 
 try {
   const res = await fetch(`${DIRECTUS_URL}/items/articles?sort=-date_created`, { headers: { Authorization: `Bearer ${token}` } });
   if (res.ok) articles = (await res.json()).data ?? [];
+  // Collecter tous les tags existants
+  const tagSet = new Set<string>();
+  articles.forEach((a: any) => { if (a.tags) String(a.tags).split(',').forEach(t => { const s = t.trim(); if (s) tagSet.add(s); }); });
+  allTags = [...tagSet].sort();
 } catch {}
 
 if (Astro.request.method === 'POST') {
@@ -20,23 +25,19 @@ if (Astro.request.method === 'POST') {
 
     if (action === 'create' || action === 'edit') {
       const title = String(fd.get('title') ?? '').trim();
-      const slug = String(fd.get('slug') ?? '').trim() || title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const slug = title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       const excerpt = String(fd.get('excerpt') ?? '').trim() || null;
-      const category = String(fd.get('category') ?? '').trim() || null;
+      const tags = String(fd.get('tags') ?? '').trim() || null;
       const body = String(fd.get('body') ?? '').trim();
-      const status = fd.get('status') || 'draft';
-      const date_published = status === 'published' ? new Date().toISOString() : null;
+      const status = String(fd.get('status') ?? 'draft');
 
       if (title && body) {
         const id = fd.get('id');
-        const data: any = { title, slug, excerpt, category, body, status };
-        if (action === 'create') data.date_published = date_published;
+        const data: any = { title, slug, excerpt, tags, body, status };
+        if (action === 'create' && status === 'published') data.date_published = new Date().toISOString();
         if (action === 'edit' && id) {
-          // Si on publie pour la première fois
-          if (status === 'published') {
-            const existing = articles.find(a => String(a.id) === String(id));
-            if (existing && !existing.date_published) data.date_published = new Date().toISOString();
-          }
+          const existing = articles.find(a => String(a.id) === String(id));
+          if (status === 'published' && existing && !existing.date_published) data.date_published = new Date().toISOString();
           await fetch(`${DIRECTUS_URL}/items/articles/${id}`, { method: 'PATCH', headers: auth, body: JSON.stringify(data) });
         } else {
           await fetch(`${DIRECTUS_URL}/items/articles`, { method: 'POST', headers: auth, body: JSON.stringify(data) });
@@ -64,51 +65,64 @@ const editing = editId ? articles.find(a => String(a.id) === editId) : null;
   <!-- Éditeur -->
   <details class="section" open={!!editing}>
     <summary class="section-banner">
-      <span>{editing ? 'Modifier l\'article' : 'Nouvel article'}</span>
+      <span>{editing ? 'Modifier' : 'Nouvel article'}</span>
       <span class="material-symbols-rounded banner-icon">edit_note</span>
       <span class="material-symbols-rounded chevron">expand_more</span>
     </summary>
     <div class="section-body">
-      <form method="POST" class="editor-form">
+      <form method="POST" id="articleForm">
         <input type="hidden" name="action" value={editing ? 'edit' : 'create'} />
         {editing && <input type="hidden" name="id" value={editing.id} />}
+        <input type="hidden" name="body" id="bodyHidden" value={editing?.body || ''} />
+        <input type="hidden" name="tags" id="tagsHidden" value={editing?.tags || ''} />
 
-        <div class="editor-row">
-          <div class="editor-field" style="flex:2">
-            <label>Titre</label>
-            <input type="text" name="title" class="input" required value={editing?.title || ''} placeholder="Titre de l'article" />
-          </div>
-          <div class="editor-field" style="flex:1">
-            <label>Slug (URL)</label>
-            <input type="text" name="slug" class="input" value={editing?.slug || ''} placeholder="auto-généré" />
-          </div>
+        <!-- Titre + Statut -->
+        <div class="ed-title-row">
+          <input type="text" name="title" class="ed-title" required value={editing?.title || ''} placeholder="Titre de l'article" />
+          <select name="status" class="ed-status">
+            <option value="draft" selected={!editing || editing?.status === 'draft'}>Brouillon</option>
+            <option value="published" selected={editing?.status === 'published'}>Publié</option>
+          </select>
         </div>
 
-        <div class="editor-row">
-          <div class="editor-field" style="flex:1">
-            <label>Catégorie</label>
-            <input type="text" name="category" class="input" value={editing?.category || ''} placeholder="Bien-être, Anxiété, etc." />
-          </div>
-          <div class="editor-field" style="flex:1">
-            <label>Statut</label>
-            <select name="status" class="input">
-              <option value="draft" selected={!editing || editing?.status === 'draft'}>Brouillon</option>
-              <option value="published" selected={editing?.status === 'published'}>Publié</option>
-            </select>
+        <!-- Tags -->
+        <div class="ed-tags-wrap">
+          <div class="ed-tags" id="tagsContainer"></div>
+          <div class="ed-tag-input-wrap">
+            <input type="text" class="ed-tag-input" id="tagInput" placeholder="Ajouter un tag..." autocomplete="off" />
+            <div class="ed-tag-suggest" id="tagSuggest" hidden></div>
           </div>
         </div>
 
-        <div class="editor-field">
-          <label>Résumé (affiché dans la liste)</label>
-          <textarea name="excerpt" class="textarea" rows="2" placeholder="Courte description">{editing?.excerpt || ''}</textarea>
-        </div>
+        <!-- Résumé -->
+        <details class="ed-summary-toggle">
+          <summary class="ed-summary-label">Résumé <span class="material-symbols-rounded">expand_more</span></summary>
+          <textarea name="excerpt" class="ed-summary" rows="2" placeholder="Courte description pour la liste d'articles">{editing?.excerpt || ''}</textarea>
+        </details>
 
-        <div class="editor-field">
-          <label>Contenu (HTML)</label>
-          <textarea name="body" class="textarea editor-body" rows="15" required placeholder="Écrivez votre article ici. Le HTML est supporté : <h2>, <p>, <strong>, <blockquote>, <ul>, <li>, etc.">{editing?.body || ''}</textarea>
+        <!-- Éditeur WYSIWYG -->
+        <div class="ed-toolbar">
+          <button type="button" class="ed-tool" data-cmd="bold" title="Gras"><span class="material-symbols-rounded">format_bold</span></button>
+          <button type="button" class="ed-tool" data-cmd="italic" title="Italique"><span class="material-symbols-rounded">format_italic</span></button>
+          <button type="button" class="ed-tool" data-cmd="underline" title="Souligné"><span class="material-symbols-rounded">format_underlined</span></button>
+          <span class="ed-tool-sep"></span>
+          <button type="button" class="ed-tool" data-cmd="hiliteColor" data-val="#FEF08A" title="Surligner"><span class="material-symbols-rounded">highlight</span></button>
+          <button type="button" class="ed-tool" data-cmd="foreColor" data-val="#1C3F6E" title="Bleu"><span class="material-symbols-rounded" style="color:#1C3F6E">format_color_text</span></button>
+          <button type="button" class="ed-tool" data-cmd="foreColor" data-val="#6D28D9" title="Violet"><span class="material-symbols-rounded" style="color:#6D28D9">format_color_text</span></button>
+          <button type="button" class="ed-tool" data-cmd="foreColor" data-val="#1a1a2e" title="Noir"><span class="material-symbols-rounded">format_color_text</span></button>
+          <span class="ed-tool-sep"></span>
+          <button type="button" class="ed-tool" data-cmd="justifyLeft" title="Aligner à gauche"><span class="material-symbols-rounded">format_align_left</span></button>
+          <button type="button" class="ed-tool" data-cmd="justifyCenter" title="Centrer"><span class="material-symbols-rounded">format_align_center</span></button>
+          <button type="button" class="ed-tool" data-cmd="justifyFull" title="Justifier"><span class="material-symbols-rounded">format_align_justify</span></button>
+          <span class="ed-tool-sep"></span>
+          <button type="button" class="ed-tool" data-cmd="formatBlock" data-val="H2" title="Titre"><span class="material-symbols-rounded">title</span></button>
+          <button type="button" class="ed-tool" data-cmd="formatBlock" data-val="BLOCKQUOTE" title="Citation"><span class="material-symbols-rounded">format_quote</span></button>
+          <button type="button" class="ed-tool" id="toolLink" title="Lien"><span class="material-symbols-rounded">link</span></button>
+          <button type="button" class="ed-tool" data-cmd="insertUnorderedList" title="Liste"><span class="material-symbols-rounded">format_list_bulleted</span></button>
         </div>
+        <div class="ed-content" id="edContent" contenteditable="true" data-placeholder="Rédigez votre article..."></div>
 
-        <div class="editor-actions">
+        <div class="ed-actions">
           {editing && <a href="/admin/articles" class="adm-btn adm-btn-outline">Annuler</a>}
           <button type="submit" class="adm-btn"><span class="material-symbols-rounded">save</span> {editing ? 'Enregistrer' : 'Créer'}</button>
         </div>
@@ -132,15 +146,15 @@ const editing = editId ? articles.find(a => String(a.id) === editId) : null;
               <div class="art-row">
                 <span class={`art-status ${a.status === 'published' ? 'art-pub' : 'art-draft'}`}>{a.status === 'published' ? 'Publié' : 'Brouillon'}</span>
                 <span class="art-title">{a.title}</span>
-                {a.category && <span class="art-cat">{a.category}</span>}
+                {a.tags && <span class="art-tags">{a.tags}</span>}
                 {date && <span class="art-date">{date}</span>}
                 <div class="art-actions">
-                  {a.status === 'published' && <a href={`/articles/${a.slug || a.id}`} target="_blank" class="art-view" title="Voir"><span class="material-symbols-rounded">open_in_new</span></a>}
-                  <a href={`/admin/articles?edit=${a.id}`} class="art-edit" title="Modifier"><span class="material-symbols-rounded">edit</span></a>
+                  {a.status === 'published' && <a href={`/articles/${a.slug || a.id}`} target="_blank" class="art-view"><span class="material-symbols-rounded">open_in_new</span></a>}
+                  <a href={`/admin/articles?edit=${a.id}`} class="art-edit"><span class="material-symbols-rounded">edit</span></a>
                   <form method="POST" style="display:inline">
                     <input type="hidden" name="action" value="delete" />
                     <input type="hidden" name="id" value={a.id} />
-                    <button type="submit" class="art-del" onclick="return confirm('Supprimer cet article ?')"><span class="material-symbols-rounded">delete</span></button>
+                    <button type="submit" class="art-del" onclick="return confirm('Supprimer ?')"><span class="material-symbols-rounded">delete</span></button>
                   </form>
                 </div>
               </div>
@@ -155,6 +169,79 @@ const editing = editId ? articles.find(a => String(a.id) === editId) : null;
 
 </AdminLayout>
 
+<script define:vars={{ allTags, editingTags: editing?.tags || '' }}>
+// Tags system
+const tagsContainer = document.getElementById('tagsContainer');
+const tagInput = document.getElementById('tagInput');
+const tagSuggest = document.getElementById('tagSuggest');
+const tagsHidden = document.getElementById('tagsHidden');
+let currentTags = editingTags ? editingTags.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+function renderTags() {
+  tagsContainer.innerHTML = currentTags.map(t => `<span class="ed-tag">${t} <button type="button" data-remove="${t}">&times;</button></span>`).join('');
+  tagsHidden.value = currentTags.join(', ');
+  tagsContainer.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', () => {
+    currentTags = currentTags.filter(x => x !== b.dataset.remove);
+    renderTags();
+  }));
+}
+
+function addTag(t) {
+  t = t.trim();
+  if (t && !currentTags.includes(t)) { currentTags.push(t); renderTags(); }
+  tagInput.value = '';
+  tagSuggest.hidden = true;
+}
+
+tagInput.addEventListener('input', () => {
+  const q = tagInput.value.toLowerCase().trim();
+  if (!q) { tagSuggest.hidden = true; return; }
+  const matches = allTags.filter(t => t.toLowerCase().includes(q) && !currentTags.includes(t));
+  if (!matches.length) { tagSuggest.hidden = true; return; }
+  tagSuggest.innerHTML = matches.map(t => `<div class="ed-tag-option" data-tag="${t}">${t}</div>`).join('') + `<div class="ed-tag-option ed-tag-add" data-tag="${tagInput.value.trim()}">+ Ajouter "${tagInput.value.trim()}"</div>`;
+  tagSuggest.hidden = false;
+  tagSuggest.querySelectorAll('[data-tag]').forEach(el => el.addEventListener('click', () => addTag(el.dataset.tag)));
+});
+
+tagInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput.value); }
+});
+
+document.addEventListener('click', (e) => { if (!e.target.closest('.ed-tag-input-wrap')) tagSuggest.hidden = true; });
+
+renderTags();
+
+// WYSIWYG editor
+const edContent = document.getElementById('edContent');
+const bodyHidden = document.getElementById('bodyHidden');
+const form = document.getElementById('articleForm');
+
+// Init content
+if (bodyHidden.value) edContent.innerHTML = bodyHidden.value;
+
+// Toolbar
+document.querySelectorAll('.ed-tool[data-cmd]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const cmd = btn.dataset.cmd;
+    const val = btn.dataset.val || null;
+    document.execCommand(cmd, false, val);
+    edContent.focus();
+  });
+});
+
+// Link tool
+document.getElementById('toolLink')?.addEventListener('click', () => {
+  const url = prompt('URL du lien :');
+  if (url) document.execCommand('createLink', false, url);
+  edContent.focus();
+});
+
+// Sync before submit
+form.addEventListener('submit', () => {
+  bodyHidden.value = edContent.innerHTML;
+});
+</script>
+
 <style>
   .section { background: #faf8f2; border: 1px solid #eee; border-radius: 10px; margin-bottom: 1rem; }
   .section-banner { display: flex; align-items: center; gap: 0.6rem; background: #6D28D9; padding: 0.75rem 1.25rem; cursor: pointer; list-style: none; user-select: none; border-radius: 9px 9px 0 0; }
@@ -166,56 +253,89 @@ const editing = editId ? articles.find(a => String(a.id) === editId) : null;
   .section[open] .chevron { transform: rotate(180deg); }
   .section-body { padding: 1.25rem 1.5rem; }
 
-  /* Editor */
-  .editor-form { display: flex; flex-direction: column; gap: 1rem; }
-  .editor-row { display: flex; gap: 0.75rem; }
-  .editor-field { display: flex; flex-direction: column; }
-  .editor-field label { font-size: 0.68rem; font-family: 'Author', serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #999; margin-bottom: 0.4rem; }
-  .input { border: 1px solid #e5e3ed; border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: 'Gambarino', Georgia, serif; color: #1a1a2e; outline: none; background: white; transition: border-color 0.2s; width: 100%; }
-  .input:focus { border-color: #6D28D9; }
-  .textarea { width: 100%; border: 1px solid #e5e3ed; border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.9rem; font-family: 'Gambarino', Georgia, serif; color: #1a1a2e; outline: none; resize: vertical; background: white; transition: border-color 0.2s; }
-  .textarea:focus { border-color: #6D28D9; }
-  .editor-body { min-height: 300px; font-family: monospace; font-size: 0.85rem; line-height: 1.6; }
-  .editor-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+  /* Title + Status row */
+  .ed-title-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .ed-title { flex: 1; border: none; background: none; font-family: 'Author', serif; font-size: 1.3rem; font-weight: 600; color: #1a1a2e; outline: none; padding: 0.5rem 0; border-bottom: 1px solid #eee; }
+  .ed-title:focus { border-bottom-color: #6D28D9; }
+  .ed-title::placeholder { color: #ccc; font-weight: 400; }
+  .ed-status { border: 1px solid #e5e3ed; border-radius: 6px; padding: 0.4rem 0.6rem; font-family: 'Author', serif; font-size: 0.78rem; font-weight: 600; color: #333; outline: none; background: white; cursor: pointer; flex-shrink: 0; align-self: flex-end; }
+
+  /* Tags */
+  .ed-tags-wrap { margin-bottom: 1rem; }
+  .ed-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.4rem; }
+  .ed-tag { display: inline-flex; align-items: center; gap: 0.25rem; background: #1C3F6E; color: white; font-family: 'Author', serif; font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 3px; }
+  .ed-tag button { background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 0; }
+  .ed-tag button:hover { color: white; }
+  .ed-tag-input-wrap { position: relative; }
+  .ed-tag-input { border: 1px solid #e5e3ed; border-radius: 6px; padding: 0.45rem 0.7rem; font-size: 0.82rem; font-family: 'Gambarino', Georgia, serif; color: #1a1a2e; outline: none; width: 200px; background: white; }
+  .ed-tag-input:focus { border-color: #6D28D9; }
+  .ed-tag-suggest { position: absolute; top: 100%; left: 0; width: 250px; background: white; border: 1px solid #eee; border-radius: 6px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 10; max-height: 180px; overflow-y: auto; }
+  .ed-tag-suggest[hidden] { display: none; }
+  .ed-tag-option { padding: 0.5rem 0.75rem; font-size: 0.82rem; cursor: pointer; color: #333; }
+  .ed-tag-option:hover { background: rgba(109,40,217,0.06); }
+  .ed-tag-add { color: #6D28D9; font-weight: 600; font-family: 'Author', serif; }
+
+  /* Summary */
+  .ed-summary-toggle { margin-bottom: 0.75rem; }
+  .ed-summary-label { font-family: 'Author', serif; font-size: 0.78rem; font-weight: 600; color: #999; cursor: pointer; display: flex; align-items: center; gap: 0.25rem; list-style: none; }
+  .ed-summary-label::-webkit-details-marker { display: none; }
+  .ed-summary-label .material-symbols-rounded { font-size: 1rem; transition: transform 0.2s; }
+  .ed-summary-toggle[open] .ed-summary-label .material-symbols-rounded { transform: rotate(180deg); }
+  .ed-summary { width: 100%; border: 1px solid #e5e3ed; border-radius: 6px; padding: 0.6rem 0.75rem; font-size: 0.88rem; font-family: 'Gambarino', Georgia, serif; color: #1a1a2e; outline: none; resize: vertical; background: white; margin-top: 0.5rem; }
+  .ed-summary:focus { border-color: #6D28D9; }
+
+  /* Toolbar */
+  .ed-toolbar { display: flex; flex-wrap: wrap; gap: 0.15rem; padding: 0.5rem; background: white; border: 1px solid #e5e3ed; border-bottom: none; border-radius: 6px 6px 0 0; }
+  .ed-tool { background: none; border: 1px solid transparent; border-radius: 4px; padding: 0.3rem; cursor: pointer; display: flex; color: #555; transition: background 0.1s; }
+  .ed-tool:hover { background: rgba(109,40,217,0.06); border-color: #e5e3ed; }
+  .ed-tool .material-symbols-rounded { font-size: 1.1rem; }
+  .ed-tool-sep { width: 1px; background: #e5e3ed; margin: 0 0.25rem; }
+
+  /* Content area */
+  .ed-content { min-height: 350px; border: 1px solid #e5e3ed; border-radius: 0 0 6px 6px; padding: 1.25rem; font-size: 0.95rem; font-family: 'Gambarino', Georgia, serif; line-height: 1.8; color: #1a1a2e; outline: none; background: white; overflow-y: auto; }
+  .ed-content:focus { border-color: #6D28D9; }
+  .ed-content:empty::before { content: attr(data-placeholder); color: #ccc; pointer-events: none; }
+  .ed-content :global(h2) { font-family: 'Author', serif; font-size: 1.3rem; font-weight: 600; color: #1C3F6E; margin: 1.5rem 0 0.75rem; }
+  .ed-content :global(blockquote) { border-left: 3px solid #1C3F6E; background: rgba(28,63,110,0.04); padding: 0.75rem 1rem; margin: 1rem 0; border-radius: 0 6px 6px 0; font-style: italic; }
+
+  .ed-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
 
   /* List */
   .art-list { border-top: 1px solid #eee; }
   .art-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.85rem 0; border-bottom: 1px solid #eee; }
   .art-row:hover { background: rgba(109,40,217,0.02); margin: 0 -0.5rem; padding-left: 0.5rem; padding-right: 0.5rem; border-radius: 6px; }
-
   .art-status { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; font-family: 'Author', serif; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 3px; flex-shrink: 0; }
   .art-pub { background: #166534; color: white; }
   .art-draft { background: #eee; color: #888; }
-
   .art-title { flex: 1; font-size: 0.88rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .art-cat { font-size: 0.7rem; color: #999; flex-shrink: 0; }
+  .art-tags { font-size: 0.68rem; color: #999; flex-shrink: 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .art-date { font-size: 0.7rem; color: #6D28D9; font-family: 'Author', serif; font-weight: 600; flex-shrink: 0; }
-
   .art-actions { display: flex; gap: 0.15rem; flex-shrink: 0; }
   .art-view, .art-edit, .art-del { background: none; border: none; cursor: pointer; padding: 0.35rem; display: flex; border-radius: 6px; text-decoration: none; }
-  .art-view { color: #999; }
-  .art-view:hover { color: #6D28D9; background: rgba(109,40,217,0.06); }
-  .art-edit { color: #1a1a2e; }
-  .art-edit:hover { background: rgba(0,0,0,0.05); }
-  .art-del { color: #dc2626; }
-  .art-del:hover { background: rgba(220,38,38,0.06); }
+  .art-view { color: #999; } .art-view:hover { color: #6D28D9; background: rgba(109,40,217,0.06); }
+  .art-edit { color: #1a1a2e; } .art-edit:hover { background: rgba(0,0,0,0.05); }
+  .art-del { color: #dc2626; } .art-del:hover { background: rgba(220,38,38,0.06); }
   .art-view .material-symbols-rounded, .art-edit .material-symbols-rounded, .art-del .material-symbols-rounded { font-size: 1.1rem; font-variation-settings: 'FILL' 0, 'wght' 600; }
-
   .empty { text-align: center; padding: 2rem; color: #999; font-size: 0.92rem; }
 
   @media (max-width: 768px) {
-    .editor-row { flex-direction: column; }
-    .art-cat, .art-date { display: none; }
+    .ed-title-row { flex-direction: column; }
+    .ed-toolbar { gap: 0; }
+    .art-tags, .art-date { display: none; }
   }
 
-  /* Dark */
   :global(.dark) .section { background: #1a1724; border-color: #2a2636; }
-  :global(.dark) .section-body { color: #e0dde6; }
-  :global(.dark) .editor-field label { color: #777; }
-  :global(.dark) .input, :global(.dark) .textarea { background: #121016; border-color: #2a2636; color: #e0dde6; }
-  :global(.dark) .input:focus, :global(.dark) .textarea:focus { border-color: #6D28D9; }
-  :global(.dark) .art-list { border-color: #2a2636; }
-  :global(.dark) .art-row { border-color: #2a2636; }
+  :global(.dark) .ed-title { color: #e0dde6; border-bottom-color: #2a2636; }
+  :global(.dark) .ed-title:focus { border-bottom-color: #6D28D9; }
+  :global(.dark) .ed-status { background: #121016; border-color: #2a2636; color: #e0dde6; }
+  :global(.dark) .ed-tag-input { background: #121016; border-color: #2a2636; color: #e0dde6; }
+  :global(.dark) .ed-tag-suggest { background: #1a1724; border-color: #2a2636; }
+  :global(.dark) .ed-tag-option { color: #ccc; }
+  :global(.dark) .ed-summary { background: #121016; border-color: #2a2636; color: #e0dde6; }
+  :global(.dark) .ed-toolbar { background: #121016; border-color: #2a2636; }
+  :global(.dark) .ed-tool { color: #aaa; }
+  :global(.dark) .ed-content { background: #121016; border-color: #2a2636; color: #e0dde6; }
+  :global(.dark) .art-list, :global(.dark) .art-row { border-color: #2a2636; }
   :global(.dark) .art-title { color: #ccc; }
   :global(.dark) .art-edit { color: #e0dde6; }
 </style>
