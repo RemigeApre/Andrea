@@ -86,7 +86,7 @@ if (Astro.request.method === 'POST') {
 const ok = Astro.url.searchParams.get('ok');
 ---
 
-<AdminLayout title="Gestion — Administration" activePage="gestion">
+<AdminLayout title="Gestion" activePage="gestion">
 
   {error && <div class="adm-alert adm-alert-error"><span class="material-symbols-rounded">error</span> {error}</div>}
 

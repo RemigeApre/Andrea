@@ -7,7 +7,7 @@ const userName = Astro.cookies.get('user_name')?.value ?? 'Patient';
 const bookingUrl = 'https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=true&selectedSpeciality=psychologist&standardizedMotives=';
 ---
 
-<AdminLayout title="Mon espace — Andrea Simonet-Davin" userName={userName}>
+<AdminLayout title="Mon espace" userName={userName}>
 
   <div class="patient-dashboard">
 

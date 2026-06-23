@@ -81,7 +81,7 @@ const editId = Astro.url.searchParams.get('edit');
 const editing = editId ? articles.find(a => String(a.id) === editId) : null;
 ---
 
-<AdminLayout title="Articles — Administration" activePage="articles">
+<AdminLayout title="Articles" activePage="articles">
 
   {ok && <div class="adm-alert adm-alert-success" style="animation:pop 4s ease forwards"><span class="material-symbols-rounded">check_circle</span> Enregistré.</div>}
   {Astro.url.searchParams.get('err') === 'creneau' && <div class="adm-alert adm-alert-error"><span class="material-symbols-rounded">error</span> Ce créneau est déjà pris. Choisissez une autre date ou heure.</div>}

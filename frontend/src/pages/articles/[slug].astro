@@ -28,7 +28,7 @@ const date = article.date_published ? new Date(article.date_published).toLocaleD
 ---
 
 <BaseLayout
-  title={`${article.title} — Andrea Simonet-Davin`}
+  title={article.title}
   description={article.excerpt || ''}
   activePage="articles"
 >
