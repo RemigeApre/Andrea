@@ -4,6 +4,9 @@ export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { fetchItems } from '../../lib/directus';
 
+// Publier les articles programmés
+try { await fetch(new URL('/api/publish-scheduled', Astro.url.origin)); } catch {}
+
 let articles: any[] = [];
 
 try {

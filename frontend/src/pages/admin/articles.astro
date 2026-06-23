@@ -33,11 +33,34 @@ if (Astro.request.method === 'POST') {
 
       if (title && body) {
         const id = fd.get('id');
+        const schedDate = String(fd.get('schedule_date') ?? '').trim();
+        const schedHour = String(fd.get('schedule_hour') ?? '07:00').trim();
         const data: any = { title, slug, excerpt, tags, body, status };
-        if (action === 'create' && status === 'published') data.date_published = new Date().toISOString();
+
+        if (status === 'published') {
+          data.date_published = new Date().toISOString();
+          data.schedule_date = null;
+          data.schedule_hour = null;
+        } else if (status === 'scheduled' && schedDate) {
+          // Vérifier le créneau
+          const conflictRes = await fetch(`${DIRECTUS_URL}/items/articles?filter[schedule_date][_eq]=${schedDate}&filter[schedule_hour][_eq]=${schedHour}&filter[status][_eq]=scheduled&limit=1`, { headers: auth });
+          if (conflictRes.ok) {
+            const conflicts = (await conflictRes.json()).data ?? [];
+            const self = id ? conflicts.filter((c: any) => String(c.id) !== String(id)) : conflicts;
+            if (self.length > 0) {
+              return Astro.redirect('/admin/articles?err=creneau');
+            }
+          }
+          data.schedule_date = schedDate;
+          data.schedule_hour = schedHour;
+          data.date_published = null;
+        } else {
+          data.schedule_date = null;
+          data.schedule_hour = null;
+          data.date_published = null;
+        }
+
         if (action === 'edit' && id) {
-          const existing = articles.find(a => String(a.id) === String(id));
-          if (status === 'published' && existing && !existing.date_published) data.date_published = new Date().toISOString();
           await fetch(`${DIRECTUS_URL}/items/articles/${id}`, { method: 'PATCH', headers: auth, body: JSON.stringify(data) });
         } else {
           await fetch(`${DIRECTUS_URL}/items/articles`, { method: 'POST', headers: auth, body: JSON.stringify(data) });
@@ -61,6 +84,13 @@ const editing = editId ? articles.find(a => String(a.id) === editId) : null;
 <AdminLayout title="Articles — Administration" activePage="articles">
 
   {ok && <div class="adm-alert adm-alert-success" style="animation:pop 4s ease forwards"><span class="material-symbols-rounded">check_circle</span> Enregistré.</div>}
+  {Astro.url.searchParams.get('err') === 'creneau' && <div class="adm-alert adm-alert-error"><span class="material-symbols-rounded">error</span> Ce créneau est déjà pris. Choisissez une autre date ou heure.</div>}
+
+  <!-- Conseil -->
+  <div class="advice-card">
+    <span class="material-symbols-rounded advice-icon">tips_and_updates</span>
+    <p>Publier un article par semaine améliore votre référencement Google et crée un rendez-vous pour vos patients, confrères et curieux. Vos articles peuvent aussi devenir des sources citées par des IA, Wikipédia ou des travaux de confrères.</p>
+  </div>
 
   <!-- Éditeur -->
   <details class="section" open={!!editing}>
@@ -76,12 +106,23 @@ const editing = editId ? articles.find(a => String(a.id) === editId) : null;
         <input type="hidden" name="body" id="bodyHidden" value={editing?.body || ''} />
         <input type="hidden" name="tags" id="tagsHidden" value={editing?.tags || ''} />
 
-        <!-- Titre + Statut -->
+        <!-- Titre + Statut + Programmation -->
         <div class="ed-title-row">
           <input type="text" name="title" class="ed-title" required value={editing?.title || ''} placeholder="Titre de l'article" />
-          <select name="status" class="ed-status">
+          <select name="status" class="ed-status" id="statusSelect">
             <option value="draft" selected={!editing || editing?.status === 'draft'}>Brouillon</option>
+            <option value="scheduled" selected={editing?.status === 'scheduled'}>Programmé</option>
             <option value="published" selected={editing?.status === 'published'}>Publié</option>
+          </select>
+        </div>
+        <div class="ed-schedule" id="scheduleRow" style={editing?.status === 'scheduled' ? '' : 'display:none'}>
+          <span class="material-symbols-rounded" style="color:#6D28D9;font-size:1.1rem">schedule</span>
+          <input type="date" name="schedule_date" id="scheduleDate" class="ed-sched-input" value={editing?.schedule_date || ''} />
+          <select name="schedule_hour" id="scheduleHour" class="ed-sched-input">
+            {Array.from({length: 16}, (_, i) => i + 7).map(h => {
+              const val = String(h).padStart(2, '0') + ':00';
+              return <option value={val} selected={editing?.schedule_hour === val}>{val}</option>;
+            })}
           </select>
         </div>
 
@@ -142,11 +183,15 @@ const editing = editId ? articles.find(a => String(a.id) === editId) : null;
         <div class="art-list">
           {articles.map((a: any) => {
             const date = a.date_published ? new Date(a.date_published).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
+            const schedLabel = a.status === 'scheduled' && a.schedule_date ? new Date(a.schedule_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) + ' ' + (a.schedule_hour || '') : '';
+            const statusLabel = a.status === 'published' ? 'Publié' : a.status === 'scheduled' ? 'Programmé' : 'Brouillon';
+            const statusClass = a.status === 'published' ? 'art-pub' : a.status === 'scheduled' ? 'art-sched' : 'art-draft';
             return (
               <div class="art-row">
-                <span class={`art-status ${a.status === 'published' ? 'art-pub' : 'art-draft'}`}>{a.status === 'published' ? 'Publié' : 'Brouillon'}</span>
+                <span class={`art-status ${statusClass}`}>{statusLabel}</span>
                 <span class="art-title">{a.title}</span>
                 {a.tags && <span class="art-tags">{a.tags}</span>}
+                {schedLabel && <span class="art-sched-date"><span class="material-symbols-rounded" style="font-size:0.8rem">schedule</span> {schedLabel}</span>}
                 {date && <span class="art-date">{date}</span>}
                 <div class="art-actions">
                   {a.status === 'published' && <a href={`/articles/${a.slug || a.id}`} target="_blank" class="art-view"><span class="material-symbols-rounded">open_in_new</span></a>}
@@ -264,6 +309,13 @@ document.getElementById('toolLink')?.addEventListener('click', () => {
 form.addEventListener('submit', () => {
   bodyHidden.value = edContent.innerHTML;
 });
+
+// Schedule toggle
+const statusSelect = document.getElementById('statusSelect');
+const scheduleRow = document.getElementById('scheduleRow');
+statusSelect?.addEventListener('change', () => {
+  scheduleRow.style.display = statusSelect.value === 'scheduled' ? '' : 'none';
+});
 </script>
 
 <style>
@@ -277,12 +329,23 @@ form.addEventListener('submit', () => {
   .section[open] .chevron { transform: rotate(180deg); }
   .section-body { padding: 1.25rem 1.5rem; }
 
+  /* Advice card */
+  .advice-card { display: flex; gap: 0.75rem; align-items: flex-start; background: #faf8f2; border: 1px solid #eee; border-left: 3px solid #6D28D9; border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+  .advice-icon { color: #6D28D9; font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem; font-variation-settings: 'FILL' 1; }
+  .advice-card p { font-size: 0.85rem; line-height: 1.6; color: #333; margin: 0; }
+  :global(.dark) .advice-card { background: #1a1724; border-color: #2a2636; border-left-color: #6D28D9; }
+  :global(.dark) .advice-card p { color: #ccc; }
+
   /* Title + Status row */
   .ed-title-row { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
   .ed-title { flex: 1; border: none; background: none; font-family: 'Author', serif; font-size: 1.3rem; font-weight: 600; color: #1a1a2e; outline: none; padding: 0.5rem 0; border-bottom: 1px solid #eee; }
   .ed-title:focus { border-bottom-color: #6D28D9; }
   .ed-title::placeholder { color: #ccc; font-weight: 400; }
   .ed-status { border: 1px solid #e5e3ed; border-radius: 6px; padding: 0.4rem 0.6rem; font-family: 'Author', serif; font-size: 0.78rem; font-weight: 600; color: #333; outline: none; background: white; cursor: pointer; flex-shrink: 0; align-self: flex-end; }
+
+  /* Schedule */
+  .ed-schedule { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; padding: 0.6rem 0.85rem; background: rgba(109,40,217,0.04); border: 1px solid rgba(109,40,217,0.12); border-radius: 8px; }
+  .ed-sched-input { border: 1px solid #e5e3ed; border-radius: 6px; padding: 0.4rem 0.6rem; font-family: 'Author', serif; font-size: 0.82rem; font-weight: 600; color: #333; outline: none; background: white; cursor: pointer; }
 
   /* Tags */
   .ed-tags-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; padding: 0.5rem 0.75rem; border: 1px solid #e5e3ed; border-radius: 8px; background: white; margin-bottom: 1rem; min-height: 42px; transition: border-color 0.2s; }
@@ -335,7 +398,9 @@ form.addEventListener('submit', () => {
   .art-row:hover { background: rgba(109,40,217,0.02); margin: 0 -0.5rem; padding-left: 0.5rem; padding-right: 0.5rem; border-radius: 6px; }
   .art-status { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; font-family: 'Author', serif; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 3px; flex-shrink: 0; }
   .art-pub { background: #166534; color: white; }
+  .art-sched { background: #6D28D9; color: white; }
   .art-draft { background: #eee; color: #888; }
+  :global(.art-sched-date) { display: flex; align-items: center; gap: 0.2rem; font-size: 0.68rem; color: #6D28D9; font-family: 'Author', serif; font-weight: 600; flex-shrink: 0; }
   .art-title { flex: 1; font-size: 0.88rem; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .art-tags { font-size: 0.68rem; color: #999; flex-shrink: 0; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .art-date { font-size: 0.7rem; color: #6D28D9; font-family: 'Author', serif; font-weight: 600; flex-shrink: 0; }
