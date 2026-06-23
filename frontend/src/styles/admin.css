@@ -289,7 +289,29 @@
   font-size: 0.88rem;
 }
 
-/* ── Theme toggle ── */
+/* ── Settings bubble ── */
+.settings-bubble { position: fixed; bottom: 2rem; right: 2rem; z-index: 200; }
+.settings-toggle { width: 44px; height: 44px; border-radius: 50%; background: #6D28D9; color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(109,40,217,0.3); transition: background 0.2s; }
+.settings-toggle:hover { background: #5B21B6; }
+.settings-toggle .material-symbols-rounded { font-size: 1.3rem; font-variation-settings: 'FILL' 0; }
+.settings-panel { position: absolute; bottom: calc(100% + 0.75rem); right: 0; width: 220px; background: white; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,0.12); padding: 0.75rem 0; }
+.settings-panel[hidden] { display: none; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 1rem; font-size: 0.82rem; font-family: 'Author', serif; font-weight: 600; color: #333; }
+.settings-switch { position: relative; width: 36px; height: 20px; cursor: pointer; }
+.settings-switch input { display: none; }
+.settings-switch span { position: absolute; inset: 0; background: #ddd; border-radius: 999px; transition: background 0.2s; }
+.settings-switch span::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.settings-switch input:checked + span { background: #6D28D9; }
+.settings-switch input:checked + span::after { transform: translateX(16px); }
+
+.adm.dark .settings-panel { background: #1a1724; border-color: #2a2636; }
+.adm.dark .settings-row { color: #e0dde6; }
+
+/* Hide hints & advice via body class */
+.hide-hints [data-hint], .hide-hints .info-hint { display: none !important; }
+.hide-advice .advice-card, .hide-advice .msg-advice, .hide-advice .notes-info-hint, .hide-advice .palette { display: none !important; }
+
+/* ── Header right ── */
 .adm-right {
   display: flex;
   align-items: center;
@@ -297,21 +319,6 @@
   flex-shrink: 0;
 }
 
-.adm-theme-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: rgba(255,255,255,0.35);
-  cursor: pointer;
-  padding: 0.4rem;
-  border-radius: 6px;
-  transition: color 0.2s;
-}
-
-.adm-theme-toggle:hover { color: rgba(255,255,255,0.8); }
-.adm-theme-toggle .material-symbols-rounded { font-size: 1.2rem; }
 
 /* ── Dark mode ── */
 .adm.dark {

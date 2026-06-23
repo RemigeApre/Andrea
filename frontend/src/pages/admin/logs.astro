@@ -5,6 +5,8 @@ import AdminLayout from '../../layouts/AdminLayout.astro';
 
 <AdminLayout title="Logs — Administration" activePage="administration">
 
+  <a href="/admin/administration" class="logs-back"><span class="material-symbols-rounded">arrow_back</span> Administration</a>
+
   <div class="logs-header">
     <h2>Journal d'activité</h2>
     <button type="button" class="adm-btn adm-btn-outline" id="clearLogs" title="Vider les logs">
@@ -62,6 +64,11 @@ document.addEventListener('astro:after-swap', initLogs);
 </script>
 
 <style>
+  .logs-back { display: inline-flex; align-items: center; gap: 0.35rem; color: #6D28D9; text-decoration: none; font-size: 0.78rem; font-family: 'Author', serif; font-weight: 600; margin-bottom: 1rem; }
+  .logs-back:hover { opacity: 0.7; }
+  .logs-back .material-symbols-rounded { font-size: 0.95rem; }
+  :global(.dark) .logs-back { color: #8B5CF6; }
+
   .logs-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
   .logs-header h2 { font-family: 'Author', serif; font-size: 1.1rem; font-weight: 600; color: #1a1a2e; }
   :global(.dark) .logs-header h2 { color: #e0dde6; }

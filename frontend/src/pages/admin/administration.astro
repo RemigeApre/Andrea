@@ -108,6 +108,10 @@ if (Astro.request.method === 'POST') {
     <h2 class="adm-card-title">
       <span class="material-symbols-rounded">block</span>
       Blocages
+      <span class="info-hint" data-hint>
+        <span class="material-symbols-rounded">info</span>
+        <span class="info-tip">Le blocage empêche un email ou un appareil d'envoyer de nouveaux messages via le formulaire de contact. La personne bloquée ne reçoit aucune notification : le formulaire fait semblant de fonctionner normalement. Le blocage par email prend en compte les variantes Gmail (points, +alias).</span>
+      </span>
     </h2>
     <div id="blacklistArea">
       <p class="adm-empty" style="padding:1rem">Chargement...</p>
@@ -115,6 +119,25 @@ if (Astro.request.method === 'POST') {
     <div style="display:flex;gap:0.5rem;margin-top:0.75rem">
       <input type="email" id="blEmail" class="adm-input" placeholder="email@exemple.com" style="flex:1" />
       <button type="button" class="adm-btn" id="blAdd"><span class="material-symbols-rounded">add</span> Bloquer</button>
+    </div>
+  </div>
+
+  <!-- Codes erreur -->
+  <div class="adm-card">
+    <h2 class="adm-card-title">
+      <span class="material-symbols-rounded">bug_report</span>
+      Codes d'erreur
+    </h2>
+    <div class="err-list">
+      <div class="err-item"><strong>404</strong><span>Page introuvable. L'URL n'existe pas ou a été déplacée.</span></div>
+      <div class="err-item"><strong>429</strong><span>Trop de requêtes. Limite de messages atteinte (1 par quinzaine).</span></div>
+      <div class="err-item"><strong>500</strong><span>Erreur serveur. Problème interne, la base de données ou le serveur ne répond pas.</span></div>
+      <div class="err-item"><strong>502</strong><span>Passerelle. Le serveur est en cours de redémarrage ou inaccessible temporairement.</span></div>
+      <div class="err-item"><strong>503</strong><span>Service indisponible. Maintenance en cours ou surcharge du serveur.</span></div>
+    </div>
+    <div class="err-contact">
+      <p>En cas d'incident : <a href="mailto:administration@legeai-editions.com">administration@legeai-editions.com</a></p>
+      <p>Urgences : <a href="tel:0675152937">06 75 15 29 37</a></p>
     </div>
   </div>
 
@@ -134,7 +157,6 @@ if (Astro.request.method === 'POST') {
 
 <script>
 function initBl() {
-  const DIRECTUS = document.querySelector('meta[name="directus-url"]')?.getAttribute('content') || 'http://localhost:8056';
   const area = document.getElementById('blacklistArea')!;
   const input = document.getElementById('blEmail') as HTMLInputElement;
 
@@ -146,17 +168,10 @@ function initBl() {
     return `${clean}@${domain}`;
   }
 
-  async function getToken() {
-    // Essayer le cookie token via une requête pour vérifier
-    const stored = document.cookie.split(';').find(c => c.trim().startsWith('directus_token='));
-    return stored?.split('=')?.[1] || '';
-  }
-
   async function load() {
     try {
-      const res = await fetch(`${DIRECTUS}/items/blacklist?sort=date_created`);
-      if (!res.ok) { area.innerHTML = '<p class="adm-empty">Erreur de chargement</p>'; return; }
-      const { data } = await res.json();
+      const res = await fetch('/api/blacklist');
+      const data = await res.json();
       if (!data?.length) { area.innerHTML = '<p class="adm-empty" style="padding:0.5rem">Aucun email bloqué</p>'; return; }
       const typeLabels: Record<string,string> = { email: 'Email', ip: 'IP', fingerprint: 'Appareil' };
       area.innerHTML = data.map((b: any) => `
@@ -168,8 +183,7 @@ function initBl() {
       `).join('');
       area.querySelectorAll('.bl-del').forEach(btn => btn.addEventListener('click', async () => {
         const id = (btn as HTMLElement).dataset.id;
-        const token = await getToken();
-        await fetch(`${DIRECTUS}/items/blacklist/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+        await fetch('/api/blacklist', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
         load();
       }));
     } catch { area.innerHTML = '<p class="adm-empty">Erreur</p>'; }
@@ -178,10 +192,9 @@ function initBl() {
   document.getElementById('blAdd')?.addEventListener('click', async () => {
     const email = input.value.trim();
     if (!email) return;
-    const token = await getToken();
-    await fetch(`${DIRECTUS}/items/blacklist`, {
+    await fetch('/api/blacklist', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email_normalized: normalize(email) }),
     });
     input.value = '';
@@ -216,4 +229,26 @@ document.addEventListener('astro:after-swap', initBl);
   .logs-link .material-symbols-rounded:last-child { margin-left: auto; color: #ccc; font-size: 0.95rem; }
   :global(.dark) .logs-link { background: #1a1724; border-color: #2a2636; color: #e0dde6; }
   :global(.dark) .logs-link:hover { border-color: #6D28D9; }
+
+  /* Info hint */
+  .info-hint { position: relative; display: inline-flex; cursor: help; margin-left: auto; }
+  .info-hint .material-symbols-rounded { font-size: 1rem; color: #bbb; transition: color 0.2s; }
+  .info-hint:hover .material-symbols-rounded { color: #6D28D9; }
+  .info-tip { display: none; position: absolute; top: calc(100% + 0.5rem); right: 0; width: 300px; background: #1a1625; color: rgba(255,255,255,0.85); font-size: 0.8rem; font-family: 'Gambarino', Georgia, serif; font-weight: 400; line-height: 1.6; padding: 0.9rem 1rem; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); z-index: 20; text-transform: none; letter-spacing: 0; }
+  .info-hint:hover .info-tip { display: block; }
+
+  /* Error codes */
+  .err-list { display: flex; flex-direction: column; gap: 0; }
+  .err-item { display: flex; align-items: baseline; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid #eee; }
+  .err-item strong { font-family: 'Author', serif; font-size: 0.88rem; color: #1a1a2e; min-width: 32px; }
+  .err-item span { font-size: 0.82rem; color: #666; }
+  .err-contact { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #eee; }
+  .err-contact p { font-size: 0.82rem; color: #333; margin: 0 0 0.3rem; }
+  .err-contact a { color: #6D28D9; text-decoration: none; font-weight: 600; }
+  .err-contact a:hover { text-decoration: underline; }
+  :global(.dark) .err-item { border-color: #2a2636; }
+  :global(.dark) .err-item strong { color: #e0dde6; }
+  :global(.dark) .err-item span { color: #999; }
+  :global(.dark) .err-contact { border-color: #2a2636; }
+  :global(.dark) .err-contact p { color: #ccc; }
 </style>

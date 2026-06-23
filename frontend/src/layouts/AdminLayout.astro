@@ -49,9 +49,6 @@ const navItems = [
         ))}
       </nav>
       <div class="adm-right">
-        <button type="button" class="adm-theme-toggle" id="themeToggle" title="Mode sombre">
-          <span class="material-symbols-rounded">dark_mode</span>
-        </button>
         <form method="POST" action="/deconnexion">
           <button type="submit" class="adm-logout" title="Déconnexion">
             <span class="material-symbols-rounded">logout</span>
@@ -65,6 +62,27 @@ const navItems = [
     <slot />
   </main>
 
+  <!-- Bulle paramètres -->
+  <div class="settings-bubble" id="settingsBubble">
+    <button class="settings-toggle" id="settingsToggle" title="Paramètres">
+      <span class="material-symbols-rounded">settings</span>
+    </button>
+    <div class="settings-panel" id="settingsPanel" hidden>
+      <div class="settings-row">
+        <span>Mode sombre</span>
+        <label class="settings-switch"><input type="checkbox" id="setDark" /><span></span></label>
+      </div>
+      <div class="settings-row">
+        <span>Masquer les infos</span>
+        <label class="settings-switch"><input type="checkbox" id="setHideHints" /><span></span></label>
+      </div>
+      <div class="settings-row">
+        <span>Masquer les encarts</span>
+        <label class="settings-switch"><input type="checkbox" id="setHideAdvice" /><span></span></label>
+      </div>
+    </div>
+  </div>
+
   <script>
     function initAdmin() {
       // Log connexion
@@ -77,20 +95,34 @@ const navItems = [
         history.replaceState(null, '', window.location.pathname);
       }
 
-      const toggle = document.getElementById('themeToggle')!;
-      const icon = toggle.querySelector('.material-symbols-rounded')!;
       const body = document.body;
+      const setDark = document.getElementById('setDark') as HTMLInputElement;
+      const setHideHints = document.getElementById('setHideHints') as HTMLInputElement;
+      const setHideAdvice = document.getElementById('setHideAdvice') as HTMLInputElement;
+      const settingsPanel = document.getElementById('settingsPanel')!;
+      const settingsToggle = document.getElementById('settingsToggle')!;
 
-      if (localStorage.getItem('adm_dark') === '1') {
-        body.classList.add('dark');
-        icon.textContent = 'light_mode';
-      }
+      // Init state
+      if (localStorage.getItem('adm_dark') === '1') { body.classList.add('dark'); setDark.checked = true; }
+      if (localStorage.getItem('adm_hide_hints') === '1') { body.classList.add('hide-hints'); setHideHints.checked = true; }
+      if (localStorage.getItem('adm_hide_advice') === '1') { body.classList.add('hide-advice'); setHideAdvice.checked = true; }
 
-      toggle.addEventListener('click', () => {
-        body.classList.toggle('dark');
-        const isDark = body.classList.contains('dark');
-        localStorage.setItem('adm_dark', isDark ? '1' : '0');
-        icon.textContent = isDark ? 'light_mode' : 'dark_mode';
+      settingsToggle.addEventListener('click', () => { settingsPanel.hidden = !settingsPanel.hidden; });
+      document.addEventListener('click', (e) => { if (!(e.target as Element).closest('.settings-bubble')) settingsPanel.hidden = true; });
+
+      setDark.addEventListener('change', () => {
+        body.classList.toggle('dark', setDark.checked);
+        localStorage.setItem('adm_dark', setDark.checked ? '1' : '0');
+      });
+
+      setHideHints.addEventListener('change', () => {
+        body.classList.toggle('hide-hints', setHideHints.checked);
+        localStorage.setItem('adm_hide_hints', setHideHints.checked ? '1' : '0');
+      });
+
+      setHideAdvice.addEventListener('change', () => {
+        body.classList.toggle('hide-advice', setHideAdvice.checked);
+        localStorage.setItem('adm_hide_advice', setHideAdvice.checked ? '1' : '0');
       });
     }
     initAdmin();

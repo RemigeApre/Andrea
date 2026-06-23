@@ -17,6 +17,11 @@ try {
 
 <AdminLayout title="Messages — Administration" activePage="messages">
 
+  <div class="msg-advice">
+    <span class="material-symbols-rounded">gavel</span>
+    <p>En cas de harcèlement, notifiez officiellement la personne par écrit que vous lui demandez de cesser tout contact. Cette notification constitue une preuve légale. Après 3 messages suivant cette demande, cela renforce considérablement le dossier. Au besoin, conservez les échanges de manière fiable.</p>
+  </div>
+
   {messages.length > 0 ? (
     <div class="msg-list">
       {messages.map((m: any) => {
@@ -64,15 +69,11 @@ try {
 
 <script>
 function initMsg() {
-  const DIRECTUS = document.querySelector('meta[name="directus-url"]')?.getAttribute('content') || 'http://localhost:8056';
-
   async function block(value: string, type: string) {
-    if (!confirm(`Bloquer ${type === 'email' ? 'cet email' : type === 'ip' ? 'cette IP' : 'cet appareil'} ?`)) return;
-    // Get token from cookie
-    const token = document.cookie.split(';').find(c => c.trim().startsWith('directus_token='))?.split('=')?.[1] || '';
-    await fetch(`${DIRECTUS}/items/blacklist`, {
+    if (!confirm(`Bloquer ${type === 'email' ? 'cet email' : 'cet appareil'} ?`)) return;
+    await fetch('/api/blacklist', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email_normalized: value, type }),
     });
     alert('Bloqué.');
@@ -86,6 +87,11 @@ document.addEventListener('astro:after-swap', initMsg);
 </script>
 
 <style>
+  .msg-advice { display: flex; gap: 0.75rem; align-items: flex-start; background: #faf8f2; border: 1px solid #eee; border-left: 3px solid #1C3F6E; border-radius: 6px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
+  .msg-advice .material-symbols-rounded { color: #1C3F6E; font-size: 1.2rem; flex-shrink: 0; margin-top: 0.1rem; font-variation-settings: 'FILL' 1; }
+  .msg-advice p { font-size: 0.85rem; line-height: 1.6; color: #333; margin: 0; }
+  :global(.dark) .msg-advice { background: #1a1724; border-color: #2a2636; border-left-color: #1C3F6E; }
+  :global(.dark) .msg-advice p { color: #ccc; }
   .msg-list { display: flex; flex-direction: column; gap: 0.75rem; }
 
   .msg-card { background: #faf8f2; border: 1px solid #eee; border-radius: 10px; padding: 1.25rem; }
