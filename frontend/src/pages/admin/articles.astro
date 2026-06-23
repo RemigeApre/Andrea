@@ -193,21 +193,45 @@ function addTag(t) {
   tagSuggest.hidden = true;
 }
 
-tagInput.addEventListener('input', () => {
+function showSuggestions() {
   const q = tagInput.value.toLowerCase().trim();
-  if (!q) { tagSuggest.hidden = true; return; }
-  const matches = allTags.filter(t => t.toLowerCase().includes(q) && !currentTags.includes(t));
-  if (!matches.length) { tagSuggest.hidden = true; return; }
-  tagSuggest.innerHTML = matches.map(t => `<div class="ed-tag-option" data-tag="${t}">${t}</div>`).join('') + `<div class="ed-tag-option ed-tag-add" data-tag="${tagInput.value.trim()}">+ Ajouter "${tagInput.value.trim()}"</div>`;
-  tagSuggest.hidden = false;
+  const available = allTags.filter(t => !currentTags.includes(t));
+  const matches = q ? available.filter(t => t.toLowerCase().includes(q)) : available;
+
+  let html = '';
+  if (matches.length) {
+    html += '<div class="ed-suggest-label">Tags existants</div>';
+    html += matches.map(t => {
+      const highlighted = q ? t.replace(new RegExp(`(${q})`, 'gi'), '<strong>$1</strong>') : t;
+      return `<div class="ed-tag-option" data-tag="${t}">${highlighted}</div>`;
+    }).join('');
+  }
+  if (q) {
+    const isNew = !allTags.some(t => t.toLowerCase() === q);
+    if (isNew) {
+      html += `<div class="ed-tag-option ed-tag-add" data-tag="${tagInput.value.trim()}"><span class="material-symbols-rounded" style="font-size:0.9rem">add</span> Créer "${tagInput.value.trim()}"</div>`;
+    }
+  }
+  if (!html && !q) {
+    html = '<div class="ed-suggest-empty">Tapez pour créer un tag</div>';
+  }
+
+  tagSuggest.innerHTML = html;
+  tagSuggest.hidden = !html;
   tagSuggest.querySelectorAll('[data-tag]').forEach(el => el.addEventListener('click', () => addTag(el.dataset.tag)));
-});
+}
+
+tagInput.addEventListener('input', showSuggestions);
+tagInput.addEventListener('focus', showSuggestions);
 
 tagInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput.value); }
+  if (e.key === 'Backspace' && !tagInput.value && currentTags.length) {
+    currentTags.pop(); renderTags(); showSuggestions();
+  }
 });
 
-document.addEventListener('click', (e) => { if (!e.target.closest('.ed-tag-input-wrap')) tagSuggest.hidden = true; });
+document.addEventListener('click', (e) => { if (!e.target.closest('.ed-tags-wrap')) tagSuggest.hidden = true; });
 
 renderTags();
 
@@ -270,13 +294,15 @@ form.addEventListener('submit', () => {
   .ed-tag-input-wrap { position: relative; flex: 1; min-width: 120px; }
   .ed-tag-input { border: none; padding: 0.25rem 0; font-size: 0.85rem; font-family: 'Gambarino', Georgia, serif; color: #1a1a2e; outline: none; width: 100%; background: none; }
   .ed-tag-input::placeholder { color: #bbb; }
-  .ed-tag-suggest { position: absolute; top: calc(100% + 0.5rem); left: -0.75rem; min-width: 220px; background: white; border: 1px solid #eee; border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.12); z-index: 10; max-height: 200px; overflow-y: auto; padding: 0.35rem 0; }
+  .ed-tag-suggest { position: absolute; top: calc(100% + 0.75rem); left: -0.75rem; min-width: 260px; background: white; border: 1px solid #eee; border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.14); z-index: 10; max-height: 240px; overflow-y: auto; padding: 0.5rem 0; }
   .ed-tag-suggest[hidden] { display: none; }
-  .ed-tag-option { padding: 0.55rem 1rem; font-size: 0.85rem; cursor: pointer; color: #333; display: flex; align-items: center; gap: 0.5rem; transition: background 0.1s; }
-  .ed-tag-option:hover { background: #f5f4f8; }
-  .ed-tag-option::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #1C3F6E; flex-shrink: 0; }
-  .ed-tag-add { color: #6D28D9; font-weight: 600; font-family: 'Author', serif; }
-  .ed-tag-add::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #6D28D9; }
+  .ed-suggest-label { padding: 0.4rem 1rem 0.25rem; font-size: 0.6rem; font-family: 'Author', serif; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #bbb; }
+  .ed-suggest-empty { padding: 1rem; font-size: 0.82rem; color: #bbb; text-align: center; }
+  .ed-tag-option { padding: 0.6rem 1rem; font-size: 0.88rem; cursor: pointer; color: #1a1a2e; display: flex; align-items: center; gap: 0.6rem; transition: background 0.1s; border-left: 3px solid transparent; }
+  .ed-tag-option:hover { background: rgba(28,63,110,0.04); border-left-color: #1C3F6E; }
+  .ed-tag-option :global(strong) { color: #1C3F6E; font-weight: 700; }
+  .ed-tag-add { color: #6D28D9; font-weight: 600; font-family: 'Author', serif; font-size: 0.85rem; border-left-color: transparent; }
+  .ed-tag-add:hover { background: rgba(109,40,217,0.04); border-left-color: #6D28D9; }
 
   /* Summary */
   .ed-summary-toggle { margin-bottom: 0.75rem; }
@@ -333,9 +359,10 @@ form.addEventListener('submit', () => {
   :global(.dark) .ed-status { background: #121016; border-color: #2a2636; color: #e0dde6; }
   :global(.dark) .ed-tags-wrap { background: #121016; border-color: #2a2636; }
   :global(.dark) .ed-tag-input { color: #e0dde6; }
-  :global(.dark) .ed-tag-suggest { background: #1a1724; border-color: #2a2636; }
+  :global(.dark) .ed-tag-suggest { background: #1a1724; border-color: #2a2636; box-shadow: 0 12px 36px rgba(0,0,0,0.35); }
   :global(.dark) .ed-tag-option { color: #ccc; }
   :global(.dark) .ed-tag-option:hover { background: #221e2e; }
+  :global(.dark) .ed-suggest-label { color: #555; }
   :global(.dark) .ed-summary { background: #121016; border-color: #2a2636; color: #e0dde6; }
   :global(.dark) .ed-toolbar { background: #121016; border-color: #2a2636; }
   :global(.dark) .ed-tool { color: #aaa; }
