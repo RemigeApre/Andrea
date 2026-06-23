@@ -41,12 +41,24 @@ const date = article.date_published ? new Date(article.date_published).toLocaleD
           Articles
         </a>
         <div class="article-meta">
-          {article.tags && <span class="article-cat">{article.tags.split(',')[0].trim()}</span>}
+          {article.tags && (
+            <div class="article-tags-row">
+              {article.tags.split(',').map((t: string) => t.trim()).filter(Boolean).map((t: string) => (
+                <a href={`/articles?tag=${encodeURIComponent(t)}`} class="article-tag">{t}</a>
+              ))}
+            </div>
+          )}
           {date && <span class="article-date">{date}</span>}
         </div>
         <h1>{article.title}</h1>
       </div>
       <div class="article-body" set:html={article.body} />
+      <div class="article-footer">
+        <a href="/articles" class="article-back-bottom">
+          <span class="material-symbols-rounded">arrow_back</span>
+          Tous les articles
+        </a>
+      </div>
     </div>
   </article>
 
@@ -80,6 +92,10 @@ const date = article.date_published ? new Date(article.date_published).toLocaleD
 
   .article-back:hover { opacity: 0.65; }
   .article-back .material-symbols-rounded { font-size: 0.95rem; }
+
+  .article-tags-row { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+  .article-tag { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: white; font-family: 'Author', serif; font-weight: 700; background: var(--primary); padding: 0.2rem 0.5rem; border-radius: 3px; text-decoration: none; transition: opacity 0.15s; }
+  .article-tag:hover { opacity: 0.8; }
 
   .article-meta {
     display: flex;
@@ -119,6 +135,8 @@ const date = article.date_published ? new Date(article.date_published).toLocaleD
     font-size: 1rem;
     line-height: 1.85;
     color: var(--charcoal);
+    text-align: justify;
+    hyphens: auto;
   }
 
   .article-body :global(h2) {
@@ -177,7 +195,29 @@ const date = article.date_published ? new Date(article.date_published).toLocaleD
     color: var(--charcoal);
   }
 
+  .article-footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .article-back-bottom {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: 'Author', serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+    transition: opacity 0.2s;
+  }
+
+  .article-back-bottom:hover { opacity: 0.65; }
+  .article-back-bottom .material-symbols-rounded { font-size: 0.95rem; }
+
   @media (max-width: 640px) {
     h1 { font-size: 1.6rem; }
+    .article-body { text-align: left; hyphens: none; }
   }
 </style>
