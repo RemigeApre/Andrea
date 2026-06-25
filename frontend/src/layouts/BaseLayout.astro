@@ -11,9 +11,10 @@ interface Props {
   description?: string;
   activePage?: string;
   adminTheme?: boolean;
+  noindex?: boolean;
 }
 
-const { title, description = '', activePage = '', adminTheme = false } = Astro.props;
+const { title, description = '', activePage = '', adminTheme = false, noindex = false } = Astro.props;
 
 let siteInfo: any = null;
 try {
@@ -38,6 +39,7 @@ try {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content={description}>
+  {noindex && <meta name="robots" content="noindex, nofollow" />}
   <meta property="og:title" content={title}>
   <meta property="og:description" content={description}>
   <meta property="og:type" content="website">
@@ -47,7 +49,7 @@ try {
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:image" content="/og.png">
-  <link rel="canonical" href={Astro.url.href}>
+  <link rel="canonical" href={`https://simonet-davin.fr${Astro.url.pathname}`}>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
@@ -63,11 +65,12 @@ try {
       "postalCode": "66140",
       "addressCountry": "FR"
     },
-    "url": Astro.site ?? Astro.url.origin,
+    "url": "https://simonet-davin.fr",
     "knowsLanguage": ["fr", "en", "pt"]
   })} />
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
   <title>{title}</title>
   <ViewTransitions />
 </head>
@@ -143,7 +146,9 @@ try {
         <div class="booking-modal-actions">
           <a href="https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=true&selectedSpeciality=psychologist&standardizedMotives=" class="btn btn-primary" target="_blank" rel="noopener" id="modalConfirm">
             Continuer
+            <span class="material-symbols-rounded" style="font-size:1rem;margin-left:0.25rem">open_in_new</span>
           </a>
+          <span class="booking-modal-redirect">Redirection vers Qare</span>
           <button class="booking-modal-close" id="modalClose">Annuler</button>
         </div>
       </div>
@@ -345,7 +350,7 @@ try {
       border-radius: 6px;
       padding: 0.6rem 0.75rem;
       font-size: 0.88rem;
-      font-family: 'Gambarino', Georgia, serif;
+      font-family: 'Lexend', sans-serif;
       color: var(--charcoal);
       outline: none;
       margin-bottom: 0.5rem;

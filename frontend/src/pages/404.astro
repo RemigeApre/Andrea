@@ -2,7 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="Page introuvable" description="Cette page n'existe pas." activePage="">
+<BaseLayout title="Page introuvable" description="Cette page n'existe pas." activePage="" noindex={true}>
   <section class="err">
     <span class="err-code">404</span>
     <p>Cette page n'existe pas ou a été déplacée.</p>

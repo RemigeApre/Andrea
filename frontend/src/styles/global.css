@@ -46,7 +46,7 @@ html {
 }
 
 body {
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   color: var(--charcoal);
   background-color: var(--cream);
   line-height: 1.7;
@@ -141,7 +141,7 @@ ul {
 }
 
 .site-logo-surname {
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.24em;
@@ -164,7 +164,7 @@ ul {
 }
 
 .nav-links a {
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -297,7 +297,7 @@ main {
 
 .hero-approche-label {
   display: block;
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -328,7 +328,7 @@ main {
 }
 
 .hero-name {
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.8rem;
   font-weight: 400;
   letter-spacing: 0.14em;
@@ -468,7 +468,7 @@ main {
 }
 
 .card h3 {
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 1.05rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
@@ -513,7 +513,7 @@ main {
 }
 
 .content-block h3 {
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-weight: 600;
   font-size: 1.05rem;
   margin-bottom: 0.5rem;
@@ -573,7 +573,7 @@ main {
 
 .approche-card-label {
   display: inline-block;
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.68rem;
   font-weight: 500;
   letter-spacing: 0.14em;
@@ -652,7 +652,7 @@ main {
 }
 
 .consult-detail {
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.85rem;
   font-weight: 400;
   letter-spacing: 0.04em;
@@ -795,7 +795,7 @@ main {
   background: rgba(28, 63, 110, 0.10);
   color: var(--primary-dark);
   border-radius: 50%;
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -893,7 +893,7 @@ main {
   padding: 0.75rem 1rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.93rem;
   color: var(--charcoal);
   background: var(--cream);
@@ -1059,7 +1059,7 @@ main {
 }
 
 .footer-urgence-item-label {
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.62rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1172,7 +1172,7 @@ main {
 }
 
 .hero-eyebrow {
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.72rem;
   font-weight: 400;
   letter-spacing: 0.18em;
@@ -1498,7 +1498,7 @@ main {
 }
 
 .booking-modal-header span {
-  font-family: 'Gambarino', Georgia, serif;
+  font-family: 'Lexend', sans-serif;
   font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 0.16em;
@@ -1575,6 +1575,13 @@ main {
   align-items: center;
   gap: 0.75rem;
   margin-top: 1.75rem;
+}
+
+.booking-modal-redirect {
+  font-size: 0.72rem;
+  color: var(--charcoal-light);
+  font-family: 'Lexend', sans-serif;
+  letter-spacing: 0.02em;
 }
 
 .booking-modal-close {

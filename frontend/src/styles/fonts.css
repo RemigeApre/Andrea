@@ -30,10 +30,4 @@
   font-style: normal;
 }
 
-@font-face {
-  font-family: 'Gambarino';
-  src: url('/fonts/gambarino-400.woff2') format('woff2');
-  font-weight: 400;
-  font-display: swap;
-  font-style: normal;
-}
+/* Lexend : chargé via Google Fonts CDN dans les layouts */
