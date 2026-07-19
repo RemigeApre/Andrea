@@ -238,22 +238,27 @@ main {
   overflow: hidden;
 }
 
-/* Cerisier décoratif — coin supérieur droit, sous le contenu */
-.hero::before {
+/* Cerisier décoratif — fixe en haut à droite sur toutes les pages */
+body::before {
   content: '';
-  position: absolute;
+  position: fixed;
   top: -80px;
   right: -80px;
   width: 900px;
   height: 780px;
   background: url('/cerisier.webp') no-repeat right top / contain;
-  opacity: 0.55;
+  opacity: 0.45;
   pointer-events: none;
   z-index: 0;
 }
 
 .hero .container,
 .hero-photo-placeholder {
+  z-index: 1;
+}
+
+main, .site-footer, .footer-urgences {
+  position: relative;
   z-index: 1;
 }
 
@@ -1161,6 +1166,16 @@ main {
   font-weight: 600;
 }
 
+.footer-geai {
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-geai:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
 .footer-adeli {
   color: rgba(255, 255, 255, 0.3);
 }
@@ -1675,12 +1690,12 @@ main {
     padding: 3rem 0 2.5rem;
   }
 
-  .hero::before {
+  body::before {
     width: 500px;
     height: 400px;
     top: -40px;
     right: -60px;
-    opacity: 0.35;
+    opacity: 0.3;
   }
 
   .hero h1 {
@@ -1817,8 +1832,12 @@ main {
     padding: 2rem 0 2rem;
   }
 
-  .hero::before {
-    display: none;
+  body::before {
+    width: 300px;
+    height: 250px;
+    opacity: 0.2;
+    top: -20px;
+    right: -30px;
   }
 
   .hero h1 {

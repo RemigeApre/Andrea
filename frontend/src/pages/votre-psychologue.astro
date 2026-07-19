@@ -31,7 +31,7 @@ const formation = [
     titre: 'Centre d\'addictologie',
     lieu: 'CHUV (Centre Hospitalier Universitaire Vaudois), Lausanne, Suisse',
     periode: '2018',
-    description: "Prévention sur le terrain, sensibilisation auprès de militaires de l'Armée Suisse, co-organisation d'un symposium et participation à la rédaction d'articles scientifiques.",
+    description: "Prise en charge en addictologie, notamment jeu excessif et prévention du suicide. Prévention sur le terrain, sensibilisation auprès de militaires de l'Armée Suisse, co-organisation d'un symposium et rédaction d'articles scientifiques.",
     icon: 'local_hospital',
   },
   {
@@ -42,17 +42,6 @@ const formation = [
     icon: 'elderly',
   },
 ];
-
-let publications: any[] = [];
-try {
-  publications = await fetchItems('travaux', { sort: 'sort' });
-} catch {
-  publications = [
-    { type: 'Mémoire', titre: "Discours de pères et mères autour de l'expérience corporel-sociéto-psychologique de l'allaitement", url: null },
-    { type: 'Article', titre: "L'addiction aux jeux vidéos", url: null },
-    { type: 'Article', titre: "Un nouveau combat après le cancer du sein", url: null },
-  ];
-}
 
 let formationsContinues: any[] = [];
 try {
@@ -90,10 +79,10 @@ const benevolas = [
         <div class="about-text">
           <h2>À propos</h2>
           <p>
-            Andrea a construit son parcours entre la Suisse et la France, dans des milieux variés : hôpitaux, centres spécialisés, associations. Cette diversité lui a donné une vision large de la souffrance psychique et des outils pour y répondre.
+            Andrea est psychologue, diplômée d'un Master II en Psychologie de l'Université de Lausanne. Son parcours l'a amenée à travailler dans des environnements variés et exigeants : accompagnement de personnes en situation de handicap lourd, suivi en EHPAD, gestion du stress en milieu professionnel, et addictologie au sein du CHUV, notamment dans le domaine du jeu excessif et de la prévention du suicide.
           </p>
           <p>
-            Le vécu féminin est un sujet qui lui tient particulièrement à cœur. Charge mentale, conflits familiaux, rapport au corps, identité. Les conflits au travail, le stress et les troubles du sommeil sont aussi parmi les motifs les plus fréquents de consultation.
+            Elle accompagne des adultes face à un large éventail de difficultés : stress, burn-out, troubles du sommeil, dépression, troubles anxieux, addictions, traumatismes, deuil, difficultés relationnelles, conjugales ou familiales, confiance en soi, gestion des émotions, expatriation, harcèlement, TSA, maladies physiques.
           </p>
           <div class="about-languages">
             <p class="languages-label">Langues de consultation</p>
@@ -177,30 +166,6 @@ const benevolas = [
       </div>
     </section>
   )}
-
-  <!-- Travaux -->
-  <section class="section">
-    <div class="container">
-      <div class="section-title">
-        <h2>Travaux</h2>
-      </div>
-      <ol class="travaux-list">
-        {publications.map((pub) => (
-          <li class="travail-item">
-            <span class="travail-type">{pub.type}</span>
-            {pub.url ? (
-              <a href={pub.url} target="_blank" rel="noopener" class="travail-titre travail-link">
-                {pub.titre}
-                <span class="material-symbols-rounded travail-link-icon">open_in_new</span>
-              </a>
-            ) : (
-              <p class="travail-titre">{pub.titre}</p>
-            )}
-          </li>
-        ))}
-      </ol>
-    </div>
-  </section>
 
   <!-- Bénévolat -->
   <section class="section section-alt">

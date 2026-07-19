@@ -172,6 +172,17 @@ try {
         });
       });
 
+      // data-contact ouvre le panneau contact
+      document.querySelectorAll('[data-contact]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const p = document.getElementById('contactPanel');
+          if (p) { p.hidden = false; }
+          const tsField = document.getElementById('contactForm')?.querySelector('[name="_ts"]') as HTMLInputElement;
+          if (tsField) tsField.value = String(Date.now());
+        });
+      });
+
       closeBtn?.addEventListener('click', () => {
         overlay?.setAttribute('aria-hidden', 'true');
         overlay?.classList.remove('open');
