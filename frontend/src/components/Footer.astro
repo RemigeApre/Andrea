@@ -32,17 +32,22 @@ const bookingUrl = 'https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=t
     </nav>
 
     <div class="footer-bottom">
-      <span class="footer-copyright">&copy; {new Date().getFullYear()} {siteInfo.name} <span class="footer-adeli">· N° ADELI : {siteInfo.adeli}</span> <span class="footer-adeli">· Réalisé par <a href="https://legeai-editions.com" target="_blank" rel="noopener" class="footer-geai">Le Geai</a></span></span>
-      <span class="footer-legal-links">
-        <a href="/mentions-legales">Mentions légales</a>
-        <span>·</span>
-        <a href="/politique-de-confidentialite">Confidentialité</a>
-      </span>
-      <span class="footer-ext-links">
-        <a href={siteInfo.doctolib_url} target="_blank" rel="noopener">Doctolib</a>
-        <span>·</span>
-        <a href={bookingUrl} target="_blank" rel="noopener" class="footer-qare">Qare</a>
-      </span>
+      <div class="footer-bottom-row">
+        <span class="footer-copyright">&copy; {new Date().getFullYear()} {siteInfo.name} <span class="footer-adeli">· N° ADELI : {siteInfo.adeli}</span></span>
+        <span class="footer-legal-links">
+          <a href="/mentions-legales">Mentions légales</a>
+          <span>·</span>
+          <a href="/politique-de-confidentialite">Confidentialité</a>
+        </span>
+      </div>
+      <div class="footer-bottom-row footer-credit-row">
+        <a href="https://legeai-editions.com" target="_blank" rel="noopener" class="footer-credit">Site conçu par <span class="footer-geai">Le Geai</span></a>
+        <span class="footer-ext-links">
+          <a href={siteInfo.doctolib_url} target="_blank" rel="noopener">Doctolib</a>
+          <span>·</span>
+          <a href={bookingUrl} target="_blank" rel="noopener" class="footer-qare">Qare</a>
+        </span>
+      </div>
     </div>
 
   </div>
