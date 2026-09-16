@@ -1419,6 +1419,130 @@ main, .site-footer, .footer-urgences {
   }
 }
 
+/* ===== Avis Google ===== */
+.google-rating-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.google-rating-score {
+  font-family: 'Author', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.google-rating-stars {
+  color: #E8A33D;
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+}
+
+.google-rating-count {
+  font-size: 0.85rem;
+  color: var(--charcoal-light);
+}
+
+.google-reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  max-width: 1000px;
+  margin-inline: auto;
+}
+
+.google-review-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.google-review-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.google-review-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.google-review-author {
+  display: block;
+  font-family: 'Author', serif;
+  font-size: 0.92rem;
+  color: var(--charcoal);
+}
+
+.google-review-stars {
+  color: #E8A33D;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.google-review-text {
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--charcoal-light);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.google-review-time {
+  font-size: 0.75rem;
+  color: var(--charcoal-light);
+  opacity: 0.7;
+}
+
+.google-reviews-cta {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.google-reviews-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.google-reviews-link:hover {
+  text-decoration: underline;
+}
+
+.google-reviews-link .material-symbols-rounded {
+  font-size: 1rem;
+}
+
+@media (max-width: 900px) {
+  .google-reviews-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .google-reviews-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===== Deontologie Summary (homepage) ===== */
 .deonto-summary {
   max-width: 700px;
@@ -1995,7 +2119,8 @@ body {
 .hero-intro, .hero-approche, .confiance-text p,
 .deonto-intro p, .engagement-card p, .principe-item p,
 .faq-answer p, .about-text p, .timeline-desc, .benevola-desc,
-.approches-text p, .approche-item p, .process-block p, .criteria-list li {
+.approches-text p, .approche-item p, .process-block p, .criteria-list li,
+.google-review-text {
   -webkit-user-select: text;
   user-select: text;
 }

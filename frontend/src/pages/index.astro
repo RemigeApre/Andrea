@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import BaseLayout from '../layouts/BaseLayout.astro';
+import GoogleReviews from '../components/GoogleReviews.astro';
 import { fetchSingleton, fetchItems } from '../lib/directus';
 
 let siteInfo: any = null;
@@ -164,5 +165,6 @@ const bookingUrl = 'https://www.qare.fr/praticien/69f3b164efcfc1003f9aa1f8?all=t
     </div>
   </section>
 
+  <GoogleReviews />
 
 </BaseLayout>

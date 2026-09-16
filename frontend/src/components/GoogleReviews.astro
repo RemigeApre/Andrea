@@ -1,0 +1,49 @@
+---
+import { fetchGoogleReviews } from '../lib/google-reviews';
+
+const data = await fetchGoogleReviews();
+---
+
+{data && (
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-title">
+        <h2>Avis Google</h2>
+        {data.rating && (
+          <p class="google-rating-summary">
+            <span class="google-rating-score">{data.rating.toFixed(1)}</span>
+            <span class="google-rating-stars" aria-hidden="true">{'★'.repeat(Math.round(data.rating))}{'☆'.repeat(5 - Math.round(data.rating))}</span>
+            {data.userRatingCount && <span class="google-rating-count">({data.userRatingCount} avis)</span>}
+          </p>
+        )}
+      </div>
+
+      <div class="google-reviews-grid">
+        {data.reviews.map((review) => (
+          <div class="google-review-card">
+            <div class="google-review-header">
+              {review.profilePhotoUrl && (
+                <img src={review.profilePhotoUrl} alt="" class="google-review-avatar" loading="lazy" referrerpolicy="no-referrer" />
+              )}
+              <div>
+                <strong class="google-review-author">{review.authorName}</strong>
+                <span class="google-review-stars" aria-hidden="true">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
+              </div>
+            </div>
+            <p class="google-review-text">{review.text}</p>
+            <span class="google-review-time">{review.relativeTime}</span>
+          </div>
+        ))}
+      </div>
+
+      {data.mapsUrl && (
+        <div class="google-reviews-cta">
+          <a href={data.mapsUrl} target="_blank" rel="noopener" class="google-reviews-link">
+            Voir tous les avis sur Google
+            <span class="material-symbols-rounded">open_in_new</span>
+          </a>
+        </div>
+      )}
+    </div>
+  </section>
+)}
