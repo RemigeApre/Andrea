@@ -159,62 +159,6 @@ try {
   </div>
 
   <script>
-    function initPage() {
-      document.querySelector('.menu-toggle')?.addEventListener('click', () => {
-        document.querySelector('.nav-links')?.classList.toggle('open');
-      });
-
-      const overlay = document.getElementById('bookingModal');
-      const closeBtn = document.getElementById('modalClose');
-
-      document.querySelectorAll('[data-booking]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          overlay?.removeAttribute('aria-hidden');
-          overlay?.classList.add('open');
-        });
-      });
-
-      // data-contact ouvre le panneau contact
-      document.querySelectorAll('[data-contact]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          const p = document.getElementById('contactPanel');
-          if (p) { p.hidden = false; }
-          const tsField = document.getElementById('contactForm')?.querySelector('[name="_ts"]') as HTMLInputElement;
-          if (tsField) tsField.value = String(Date.now());
-        });
-      });
-
-      closeBtn?.addEventListener('click', () => {
-        overlay?.setAttribute('aria-hidden', 'true');
-        overlay?.classList.remove('open');
-      });
-
-      overlay?.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-          overlay.setAttribute('aria-hidden', 'true');
-          overlay.classList.remove('open');
-        }
-      });
-    }
-
-    // Contact panel
-    const panel = document.getElementById('contactPanel');
-    const contactForm = document.getElementById('contactForm') as HTMLFormElement | null;
-    const contactStatus = document.getElementById('contactStatus');
-
-    document.getElementById('contactToggle')?.addEventListener('click', () => {
-      if (panel) { panel.hidden = !panel.hidden; }
-      // Set timestamp for anti-bot
-      const tsField = contactForm?.querySelector('[name="_ts"]') as HTMLInputElement;
-      if (tsField) tsField.value = String(Date.now());
-    });
-
-    document.getElementById('contactClose')?.addEventListener('click', () => {
-      if (panel) panel.hidden = true;
-    });
-
     // Fingerprint basique
     function getFingerprint(): string {
       const parts = [
@@ -236,43 +180,100 @@ try {
       return 'fp_' + Math.abs(h).toString(36);
     }
 
-    contactForm?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fd = new FormData(contactForm);
-      const btn = document.getElementById('contactSend') as HTMLButtonElement;
-      btn.disabled = true;
-      btn.textContent = 'Envoi...';
-      if (contactStatus) contactStatus.textContent = '';
+    function initPage() {
+      document.querySelector('.menu-toggle')?.addEventListener('click', () => {
+        document.querySelector('.nav-links')?.classList.toggle('open');
+      });
 
-      try {
-        const res = await fetch('/api/contact', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: fd.get('email'),
-            phone: fd.get('phone'),
-            firstname: fd.get('firstname'),
-            lastname: fd.get('lastname'),
-            message: fd.get('message'),
-            token: fd.get('token'),
-            _ts: Number(fd.get('_ts')),
-            fingerprint: getFingerprint(),
-          }),
+      const overlay = document.getElementById('bookingModal');
+      const closeBtn = document.getElementById('modalClose');
+
+      document.querySelectorAll('[data-booking]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          overlay?.removeAttribute('aria-hidden');
+          overlay?.classList.add('open');
         });
-        const data = await res.json();
-        if (data.ok) {
-          if (contactStatus) { contactStatus.textContent = 'Message envoyé.'; contactStatus.className = 'contact-status ok'; }
-          contactForm.reset();
-          setTimeout(() => { if (panel) panel.hidden = true; }, 2000);
-        } else {
-          if (contactStatus) { contactStatus.textContent = data.error || 'Erreur.'; contactStatus.className = 'contact-status err'; }
+      });
+
+      closeBtn?.addEventListener('click', () => {
+        overlay?.setAttribute('aria-hidden', 'true');
+        overlay?.classList.remove('open');
+      });
+
+      overlay?.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.setAttribute('aria-hidden', 'true');
+          overlay.classList.remove('open');
         }
-      } catch {
-        if (contactStatus) { contactStatus.textContent = 'Erreur de connexion.'; contactStatus.className = 'contact-status err'; }
+      });
+
+      // Panneau contact
+      const panel = document.getElementById('contactPanel');
+      const contactForm = document.getElementById('contactForm') as HTMLFormElement | null;
+      const contactStatus = document.getElementById('contactStatus');
+
+      function stampTs() {
+        const tsField = contactForm?.querySelector('[name="_ts"]') as HTMLInputElement;
+        if (tsField) tsField.value = String(Date.now());
       }
-      btn.disabled = false;
-      btn.textContent = 'Envoyer';
-    });
+
+      // data-contact ouvre le panneau contact
+      document.querySelectorAll('[data-contact]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          if (panel) panel.hidden = false;
+          stampTs();
+        });
+      });
+
+      document.getElementById('contactToggle')?.addEventListener('click', () => {
+        if (panel) { panel.hidden = !panel.hidden; }
+        stampTs();
+      });
+
+      document.getElementById('contactClose')?.addEventListener('click', () => {
+        if (panel) panel.hidden = true;
+      });
+
+      contactForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(contactForm);
+        const btn = document.getElementById('contactSend') as HTMLButtonElement;
+        btn.disabled = true;
+        btn.textContent = 'Envoi...';
+        if (contactStatus) contactStatus.textContent = '';
+
+        try {
+          const res = await fetch('/api/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: fd.get('email'),
+              phone: fd.get('phone'),
+              firstname: fd.get('firstname'),
+              lastname: fd.get('lastname'),
+              message: fd.get('message'),
+              token: fd.get('token'),
+              _ts: Number(fd.get('_ts')),
+              fingerprint: getFingerprint(),
+            }),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            if (contactStatus) { contactStatus.textContent = 'Message envoyé.'; contactStatus.className = 'contact-status ok'; }
+            contactForm.reset();
+            setTimeout(() => { if (panel) panel.hidden = true; }, 2000);
+          } else {
+            if (contactStatus) { contactStatus.textContent = data.error || 'Erreur.'; contactStatus.className = 'contact-status err'; }
+          }
+        } catch {
+          if (contactStatus) { contactStatus.textContent = 'Erreur de connexion.'; contactStatus.className = 'contact-status err'; }
+        }
+        btn.disabled = false;
+        btn.textContent = 'Envoyer';
+      });
+    }
 
     initPage();
     document.addEventListener('astro:after-swap', initPage);
@@ -328,11 +329,13 @@ try {
       right: 2rem;
       z-index: 150;
       width: 360px;
+      max-height: calc(100vh - 10rem);
       background: white;
       border: 1px solid var(--border);
       border-radius: 14px;
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     .contact-panel[hidden] { display: none; }
